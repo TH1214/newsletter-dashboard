@@ -1,0 +1,74 @@
+baseURL: "https://th1214.github.io/newsletter-dashboard/"
+languageCode: "ja"
+title: "Bolgheri Daily Brief"
+theme: "PaperMod"
+timezone: "Asia/Tokyo"
+
+params:
+  defaultTheme: auto
+  ShowReadingTime: false
+  ShowShareButtons: false
+  ShowPostNavLinks: true
+  ShowBreadCrumbs: true
+  ShowCodeCopyButtons: false
+  ShowFullTextinRSS: true
+  homeInfoParams:
+    Title: "Bolgheri Daily Brief"
+    Content: "英語ニュースレターの日本語翻訳ダッシュボード＆アーカイブ"
+  fuseOpts:
+    isCaseSensitive: false
+    shouldSort: true
+    location: 0
+    distance: 1000
+    threshold: 0.4
+    minMatchCharLength: 3
+    keys: ["title", "summary", "content"]
+
+outputs:
+  home:
+    - HTML
+    - RSS
+    - JSON
+
+menu:
+  main:
+    - identifier: wsj
+      name: WSJ
+      url: /wsj/
+      weight: 10
+    - identifier: nyt-bn
+      name: NYT BN
+      url: /nyt-bn/
+      weight: 20
+    - identifier: short-squeez
+      name: Short Squeez
+      url: /short-squeez/
+      weight: 30
+    - identifier: skift
+      name: Skift
+      url: /skift/
+      weight: 40
+    - identifier: economist
+      name: Economist
+      url: /economist/
+      weight: 50
+    - identifier: buysiders
+      name: Buysiders
+      url: /buysiders/
+      weight: 60
+    - identifier: nyt-op
+      name: NYT OP
+      url: /nyt-op/
+      weight: 70
+    - identifier: business-insider
+      name: BI
+      url: /business-insider/
+      weight: 80
+    - identifier: search
+      name: 🔍検索
+      url: /search/
+      weight: 90
+
+taxonomies:
+  tag: tags
+  category: categories
