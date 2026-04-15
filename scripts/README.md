@@ -1,29 +1,28 @@
 # scripts/
 
-## apply-phase4-to-skills.sh
+## publish-skill/SKILL.md
 
-既存の翻訳スキル（WSJ・NYT BN・Short Squeez・Skift・Buysiders・NYT OP・BI）に、
-本サイトへの自動保存・コミット処理を追加するセクションを一括で追記するスクリプト。
+Bolgheri Daily Brief サイトに翻訳レポートを自動反映するための**新スキル**の定義ファイル。
 
-### 使い方（Macローカルターミナル）
+### セットアップ手順
 
-```bash
-cd ~/newsletter-dashboard
-bash scripts/apply-phase4-to-skills.sh
+Cowork アプリで新しいスキルを作成し、以下の内容を登録：
+
+1. Cowork アプリ → 設定 → スキル → **新規スキル作成**
+2. スキル名: `publish-to-bolgheri`
+3. SKILL.md の内容: `publish-skill/SKILL.md` を全文コピペ
+4. 保存
+
+### 使用方法
+
+```
+1. "W" や "BN" や "OWS" 等を入力 → 翻訳レポートがチャットに表示
+2. "P" と入力 → publish-to-bolgheri スキルが起動 → 直前レポートを保存＆commit
+3. GitHub Desktop で「Push origin」をクリック → 数分後にサイト公開
 ```
 
-### 挙動
+### トリガーキーワード
 
-- `~/.claude/skills/<skill>/SKILL.md` を各スキルについて上書き（追記）
-- 同じセクションが既にある場合はスキップ（冪等）
-- 変更前に `SKILL.md.bak.<タイムスタンプ>` としてバックアップ作成
-
-### ロールバック
-
-何か問題があれば各スキルフォルダの最新 `.bak.*` を `SKILL.md` にリネームで元に戻せる:
-
-```bash
-cd ~/.claude/skills/wsj-newsletter-report
-ls -lt SKILL.md.bak.*  # 最新のを確認
-mv SKILL.md.bak.20260415-223500 SKILL.md  # 最新バックアップに戻す
-```
+- `P` （1文字）
+- `pub`, `publish`, `Publish`
+- `サイトに公開`, `サイト反映`, `反映`, `保存して`
