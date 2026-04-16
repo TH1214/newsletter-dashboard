@@ -59,6 +59,11 @@ def get_access_token():
     client_secret = os.environ["GMAIL_CLIENT_SECRET"]
     refresh_token = os.environ["GMAIL_REFRESH_TOKEN"]
 
+    # デバッグ: 認証情報の先頭・末尾を表示（秘密情報はマスク）
+    print(f"[auth] client_id: {client_id[:20]}...{client_id[-5:]}", file=sys.stderr)
+    print(f"[auth] client_secret: {client_secret[:8]}...{client_secret[-4:]}", file=sys.stderr)
+    print(f"[auth] refresh_token: {refresh_token[:15]}...{refresh_token[-6:]} (len={len(refresh_token)})", file=sys.stderr)
+
     data = urllib.parse.urlencode({
         "client_id": client_id,
         "client_secret": client_secret,
@@ -67,9 +72,14 @@ def get_access_token():
     }).encode("utf-8")
 
     req = urllib.request.Request("https://oauth2.googleapis.com/token", data=data)
-    with urllib.request.urlopen(req) as resp:
-        result = json.loads(resp.read().decode("utf-8"))
-    return result["access_token"]
+    try:
+        with urllib.request.urlopen(req) as resp:
+            result = json.loads(resp.read().decode("utf-8"))
+        return result["access_token"]
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode("utf-8", errors="replace")
+        print(f"[auth] Token refresh failed: {e.code} {error_body}", file=sys.stderr)
+        sys.exit(1)
 
 
 def gmail_api(access_token, endpoint, params=None):
