@@ -92,28 +92,40 @@ jobs:
 
             # ── Claude で翻訳 ──
             echo "🤖 Translating $SOURCE with Claude..."
-            if cat /tmp/full_prompt.txt | claude -p \
+            PROMPT_LEN=$(wc -c < /tmp/full_prompt.txt)
+            echo "  Prompt size: ${PROMPT_LEN} bytes"
+            claude --version 2>&1 || true
+
+            set +e
+            claude -p "$(cat /tmp/full_prompt.txt)" \
               --output-format text \
               --max-turns 1 \
-              > "/tmp/translated_${SOURCE}.md" 2>/tmp/claude_log.txt; then
+              > "/tmp/translated_${SOURCE}.md" 2>/tmp/claude_err.txt
+            CLAUDE_EXIT=$?
+            set -e
 
-              # コードフェンスが付いていたら除去
+            echo "  Claude exit code: $CLAUDE_EXIT"
+            if [ -s /tmp/claude_err.txt ]; then
+              echo "  Claude stderr:"
+              cat /tmp/claude_err.txt
+            fi
+
+            if [ $CLAUDE_EXIT -eq 0 ] && [ -s "/tmp/translated_${SOURCE}.md" ]; then
               sed -i '1{/^```/d}' "/tmp/translated_${SOURCE}.md"
               sed -i '${/^```$/d}' "/tmp/translated_${SOURCE}.md"
 
-              # front matter の存在チェック
               if head -1 "/tmp/translated_${SOURCE}.md" | grep -q "^---"; then
                 cp "/tmp/translated_${SOURCE}.md" "content/${SOURCE}/${TODAY}.md"
                 echo "✅ Translated $SOURCE → content/${SOURCE}/${TODAY}.md"
                 TRANSLATED=$((TRANSLATED + 1))
               else
-                echo "⚠️ Output missing front matter for $SOURCE, skipping"
-                cat "/tmp/translated_${SOURCE}.md" | head -5
+                echo "⚠️ Output missing front matter for $SOURCE"
+                head -5 "/tmp/translated_${SOURCE}.md"
                 FAILED=$((FAILED + 1))
               fi
             else
-              echo "❌ Claude translation failed for $SOURCE"
-              cat /tmp/claude_log.txt
+              echo "❌ Claude translation failed (exit=$CLAUDE_EXIT)"
+              [ -s "/tmp/translated_${SOURCE}.md" ] && head -10 "/tmp/translated_${SOURCE}.md"
               FAILED=$((FAILED + 1))
             fi
 
