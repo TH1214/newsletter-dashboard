@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Google Gemini API を使ってニュースレターを日本語翻訳するスクリプト。
 GitHub Actions 上で実行される。GEMINI_API_KEY 環境変数で認証。
-Gemini 2.0 Flash は無料枠: 15 RPM / 1,500 requests/day / 1M tokens/day
+無料枠: 15 RPM / 1,500 requests/day / 1M tokens/day
 
 Usage:
     python scripts/translate_gemini.py <source> <date> < email_content.txt > translated.md
@@ -18,70 +18,86 @@ import urllib.request
 import urllib.error
 
 TRANSLATE_PROMPT_PATH = "scripts/translate_prompt.md"
-GEMINI_MODEL = "gemini-1.5-flash"
-GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1/models"
+
+# 試すモデルの優先順位（上から順に試す）
+CANDIDATE_MODELS = [
+    "gemini-1.5-flash",
+    "gemini-1.5-flash-latest",
+    "gemini-1.5-pro",
+    "gemini-pro",
+]
+
+# v1 → v1beta の順で試す
+API_VERSIONS = ["v1", "v1beta"]
+GEMINI_API_HOST = "https://generativelanguage.googleapis.com"
+
+
+def list_models(api_key: str) -> list:
+    """利用可能なモデル一覧を取得"""
+    url = f"{GEMINI_API_HOST}/v1/models?key={api_key}"
+    try:
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req) as resp:
+            result = json.loads(resp.read().decode("utf-8"))
+        models = [m["name"] for m in result.get("models", [])]
+        return models
+    except Exception as e:
+        print(f"[gemini] ListModels failed: {e}", file=sys.stderr)
+        return []
+
+
+def call_gemini_once(api_key: str, model: str, version: str, prompt: str) -> str:
+    """指定モデル・バージョンで Gemini API を呼び出す"""
+    url = f"{GEMINI_API_HOST}/{version}/models/{model}:generateContent?key={api_key}"
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {"temperature": 0.3, "maxOutputTokens": 8192},
+    }
+    data = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(
+        url, data=data,
+        headers={"Content-Type": "application/json"}, method="POST"
+    )
+    with urllib.request.urlopen(req) as resp:
+        result = json.loads(resp.read().decode("utf-8"))
+
+    candidates = result.get("candidates", [])
+    if not candidates:
+        raise ValueError(f"Empty candidates: {result}")
+    text = candidates[0]["content"]["parts"][0]["text"]
+    usage = result.get("usageMetadata", {})
+    print(f"[gemini] OK model={model} api={version} tokens=in:{usage.get('promptTokenCount','?')}/out:{usage.get('candidatesTokenCount','?')}", file=sys.stderr)
+    return text
 
 
 def call_gemini(api_key: str, prompt: str) -> str:
-    """Gemini API を呼び出して翻訳結果を返す"""
-    url = f"{GEMINI_API_BASE}/{GEMINI_MODEL}:generateContent?key={api_key}"
+    """利用可能なモデルを自動検出して呼び出す"""
+    # まず利用可能なモデルをリスト
+    available = list_models(api_key)
+    if available:
+        print(f"[gemini] Available models: {', '.join(m.split('/')[-1] for m in available[:5])}...", file=sys.stderr)
 
-    payload = {
-        "contents": [
-            {
-                "parts": [{"text": prompt}]
-            }
-        ],
-        "generationConfig": {
-            "temperature": 0.3,
-            "maxOutputTokens": 8192,
-        }
-    }
+    # 候補モデルを順に試す
+    last_err = None
+    for model in CANDIDATE_MODELS:
+        for version in API_VERSIONS:
+            print(f"[gemini] Trying model={model} api={version}...", file=sys.stderr)
+            try:
+                return call_gemini_once(api_key, model, version, prompt)
+            except urllib.error.HTTPError as e:
+                body = e.read().decode("utf-8", errors="replace")
+                try:
+                    msg = json.loads(body).get("error", {}).get("message", body)
+                except Exception:
+                    msg = body
+                print(f"[gemini] HTTP {e.code}: {msg[:120]}", file=sys.stderr)
+                last_err = f"HTTP {e.code}: {msg}"
+            except Exception as e:
+                print(f"[gemini] Error: {e}", file=sys.stderr)
+                last_err = str(e)
 
-    data = json.dumps(payload).encode("utf-8")
-    req = urllib.request.Request(
-        url,
-        data=data,
-        headers={"Content-Type": "application/json"},
-        method="POST"
-    )
-
-    try:
-        with urllib.request.urlopen(req) as resp:
-            result = json.loads(resp.read().decode("utf-8"))
-
-        # レスポンスからテキストを抽出
-        candidates = result.get("candidates", [])
-        if not candidates:
-            print(f"[error] Empty candidates in response: {result}", file=sys.stderr)
-            sys.exit(1)
-
-        content = candidates[0].get("content", {})
-        parts = content.get("parts", [])
-        if not parts:
-            print(f"[error] Empty parts in response", file=sys.stderr)
-            sys.exit(1)
-
-        text = parts[0].get("text", "")
-
-        # usage ログ
-        usage = result.get("usageMetadata", {})
-        print(f"[gemini] Tokens: input={usage.get('promptTokenCount', '?')} output={usage.get('candidatesTokenCount', '?')}", file=sys.stderr)
-
-        return text
-
-    except urllib.error.HTTPError as e:
-        error_body = e.read().decode("utf-8", errors="replace")
-        try:
-            err_json = json.loads(error_body)
-            err_msg = err_json.get("error", {}).get("message", error_body)
-        except Exception:
-            err_msg = error_body
-        print(f"[error] Gemini API HTTP {e.code}: {err_msg}", file=sys.stderr)
-        sys.exit(1)
-    except Exception as e:
-        print(f"[error] Unexpected error: {type(e).__name__}: {e}", file=sys.stderr)
-        sys.exit(1)
+    print(f"[error] All models failed. Last error: {last_err}", file=sys.stderr)
+    sys.exit(1)
 
 
 def main():
