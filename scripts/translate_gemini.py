@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
-"""Groq API を使ってニュースレターを日本語翻訳するスクリプト。
-GitHub Actions 上で実行される。GROQ_API_KEY 環境変数で認証。
-Groq 無料枠: 14,400 req/day, 500K tokens/min (llama-3.3-70b-versatile)
+"""GitHub Models を使ってニュースレターを日本語翻訳するスクリプト。
+GitHub Actions 上で実行される。GITHUB_TOKEN で認証。
 
 Usage:
     python scripts/translate_gemini.py <source> <date> < email_content.txt > translated.md
+
+Env:
+    GITHUB_TOKEN             必須。workflow が渡す GITHUB_TOKEN
+    TRANSLATION_MODEL        既定: openai/gpt-4o-mini  (本番推奨: openai/gpt-4.1)
+    GITHUB_MODELS_ENDPOINT   既定: https://models.github.ai/inference  (ベース URL)
 
 Exit codes:
     0: 成功
@@ -18,14 +22,15 @@ import urllib.request
 import urllib.error
 
 TRANSLATE_PROMPT_PATH = "scripts/translate_prompt.md"
-GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
-GROQ_MODEL = "llama-3.3-70b-versatile"
+DEFAULT_ENDPOINT = "https://models.github.ai/inference"
+DEFAULT_MODEL = "openai/gpt-4o-mini"
 
 
-def call_groq(api_key: str, prompt: str) -> str:
-    """Groq API (OpenAI互換) を呼び出して翻訳結果を返す"""
+def call_github_models(base_url: str, token: str, model: str, prompt: str) -> str:
+    """GitHub Models (OpenAI 互換) を呼び出して翻訳結果を返す"""
+    url = base_url.rstrip("/") + "/chat/completions"
     payload = {
-        "model": GROQ_MODEL,
+        "model": model,
         "messages": [
             {"role": "user", "content": prompt}
         ],
@@ -35,13 +40,15 @@ def call_groq(api_key: str, prompt: str) -> str:
 
     data = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(
-        GROQ_API_URL,
+        url,
         data=data,
         headers={
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/vnd.github+json",
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}",
+            "X-GitHub-Api-Version": "2022-11-28",
         },
-        method="POST"
+        method="POST",
     )
 
     try:
@@ -50,7 +57,11 @@ def call_groq(api_key: str, prompt: str) -> str:
 
         text = result["choices"][0]["message"]["content"]
         usage = result.get("usage", {})
-        print(f"[groq] OK model={GROQ_MODEL} tokens=in:{usage.get('prompt_tokens','?')}/out:{usage.get('completion_tokens','?')}", file=sys.stderr)
+        print(
+            f"[github-models] OK model={model} "
+            f"tokens=in:{usage.get('prompt_tokens','?')}/out:{usage.get('completion_tokens','?')}",
+            file=sys.stderr,
+        )
         return text
 
     except urllib.error.HTTPError as e:
@@ -59,7 +70,7 @@ def call_groq(api_key: str, prompt: str) -> str:
             msg = json.loads(body).get("error", {}).get("message", body)
         except Exception:
             msg = body
-        print(f"[error] Groq API HTTP {e.code}: {msg}", file=sys.stderr)
+        print(f"[error] GitHub Models HTTP {e.code}: {msg}", file=sys.stderr)
         sys.exit(1)
     except Exception as e:
         print(f"[error] Unexpected error: {type(e).__name__}: {e}", file=sys.stderr)
@@ -74,19 +85,25 @@ def main():
     source = sys.argv[1]
     date = sys.argv[2]
 
-    # API キー確認
-    api_key = os.environ.get("GROQ_API_KEY")
-    if not api_key:
-        print("[error] GROQ_API_KEY is not set", file=sys.stderr)
+    # 認証・設定
+    token = os.environ.get("GITHUB_TOKEN")
+    if not token:
+        print("[error] GITHUB_TOKEN is not set", file=sys.stderr)
         sys.exit(1)
-    print(f"[groq] API key: {api_key[:8]}...{api_key[-4:]} (len={len(api_key)})", file=sys.stderr)
+    model = os.environ.get("TRANSLATION_MODEL", DEFAULT_MODEL)
+    base_url = os.environ.get("GITHUB_MODELS_ENDPOINT", DEFAULT_ENDPOINT)
+    print(
+        f"[github-models] endpoint={base_url} model={model} "
+        f"token={token[:4]}...{token[-4:]} (len={len(token)})",
+        file=sys.stderr,
+    )
 
     # メール本文を stdin から読み込む
     email_content = sys.stdin.read()
     if not email_content.strip():
         print("[error] No email content provided via stdin", file=sys.stderr)
         sys.exit(1)
-    print(f"[groq] Email content: {len(email_content)} bytes", file=sys.stderr)
+    print(f"[github-models] Email content: {len(email_content)} bytes", file=sys.stderr)
 
     # 翻訳プロンプトを読み込む
     try:
@@ -105,10 +122,10 @@ def main():
         f"---\n\n"
         f"{email_content}"
     )
-    print(f"[groq] Full prompt: {len(full_prompt)} bytes", file=sys.stderr)
-    print(f"[groq] Calling Groq API (model: {GROQ_MODEL})...", file=sys.stderr)
+    print(f"[github-models] Full prompt: {len(full_prompt)} bytes", file=sys.stderr)
+    print("[github-models] Calling GitHub Models...", file=sys.stderr)
 
-    result = call_groq(api_key, full_prompt)
+    result = call_github_models(base_url, token, model, full_prompt)
 
     # コードフェンスが付いていたら除去
     lines = result.splitlines()
@@ -118,7 +135,7 @@ def main():
         lines = lines[:-1]
     result = "\n".join(lines)
 
-    print(f"[groq] Output: {len(result)} bytes", file=sys.stderr)
+    print(f"[github-models] Output: {len(result)} bytes", file=sys.stderr)
     print(result)
     sys.exit(0)
 

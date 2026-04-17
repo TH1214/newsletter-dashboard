@@ -14,6 +14,7 @@ on:
 
 permissions:
   contents: write
+  models: read
 
 jobs:
   translate:
@@ -39,6 +40,9 @@ jobs:
           GMAIL_CLIENT_SECRET: ${{ secrets.GMAIL_CLIENT_SECRET }}
           GMAIL_REFRESH_TOKEN: ${{ secrets.GMAIL_REFRESH_TOKEN }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TRANSLATION_MODEL: openai/gpt-4o-mini
+          GITHUB_MODELS_ENDPOINT: https://models.github.ai/inference
         run: |
           TODAY=$(date +%Y-%m-%d)
           ALL_SOURCES="wsj nyt-bn short-squeez skift buysiders nyt-op business-insider"
