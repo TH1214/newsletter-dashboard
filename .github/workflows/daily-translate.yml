@@ -33,21 +33,12 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install Claude Code CLI
-        run: npm install -g @anthropic-ai/claude-code
-
       - name: Fetch and translate newsletters
         env:
           GMAIL_CLIENT_ID: ${{ secrets.GMAIL_CLIENT_ID }}
           GMAIL_CLIENT_SECRET: ${{ secrets.GMAIL_CLIENT_SECRET }}
           GMAIL_REFRESH_TOKEN: ${{ secrets.GMAIL_REFRESH_TOKEN }}
-          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          CLAUDE_CODE_SKIP_TERMS_ACCEPTANCE: '1'
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           TODAY=$(date +%Y-%m-%d)
           ALL_SOURCES="wsj nyt-bn short-squeez skift buysiders nyt-op business-insider"
@@ -83,37 +74,25 @@ jobs:
               continue
             fi
 
-            # ── 翻訳プロンプト構築 ──
+            # ── Gemini で翻訳 ──
             mkdir -p "content/${SOURCE}"
-
-            cat scripts/translate_prompt.md > /tmp/full_prompt.txt
-            printf "\n\n---\nSOURCE_SLUG: %s\nDATE: %s\n---\n\n" "$SOURCE" "$TODAY" >> /tmp/full_prompt.txt
-            cat "/tmp/email_${SOURCE}.txt" >> /tmp/full_prompt.txt
-
-            # ── Claude で翻訳 ──
-            echo "🤖 Translating $SOURCE with Claude..."
-            PROMPT_LEN=$(wc -c < /tmp/full_prompt.txt)
-            echo "  Prompt size: ${PROMPT_LEN} bytes"
-            claude --version 2>&1 || true
+            echo "🤖 Translating $SOURCE with Gemini..."
 
             set +e
-            claude -p "$(cat /tmp/full_prompt.txt)" \
-              --output-format text \
-              --max-turns 1 \
-              > "/tmp/translated_${SOURCE}.md" 2>/tmp/claude_err.txt
+            python scripts/translate_gemini.py "$SOURCE" "$TODAY" \
+              < "/tmp/email_${SOURCE}.txt" \
+              > "/tmp/translated_${SOURCE}.md" \
+              2>/tmp/claude_err.txt
             CLAUDE_EXIT=$?
             set -e
 
-            echo "  Claude exit code: $CLAUDE_EXIT"
+            echo "  translate_gemini.py exit code: $CLAUDE_EXIT"
             if [ -s /tmp/claude_err.txt ]; then
-              echo "  Claude stderr:"
+              echo "  stderr:"
               cat /tmp/claude_err.txt
             fi
 
             if [ $CLAUDE_EXIT -eq 0 ] && [ -s "/tmp/translated_${SOURCE}.md" ]; then
-              sed -i '1{/^```/d}' "/tmp/translated_${SOURCE}.md"
-              sed -i '${/^```$/d}' "/tmp/translated_${SOURCE}.md"
-
               if head -1 "/tmp/translated_${SOURCE}.md" | grep -q "^---"; then
                 cp "/tmp/translated_${SOURCE}.md" "content/${SOURCE}/${TODAY}.md"
                 echo "✅ Translated $SOURCE → content/${SOURCE}/${TODAY}.md"
@@ -124,7 +103,7 @@ jobs:
                 FAILED=$((FAILED + 1))
               fi
             else
-              echo "❌ Claude translation failed (exit=$CLAUDE_EXIT)"
+              echo "❌ Translation failed (exit=$CLAUDE_EXIT)"
               [ -s "/tmp/translated_${SOURCE}.md" ] && head -10 "/tmp/translated_${SOURCE}.md"
               FAILED=$((FAILED + 1))
             fi
