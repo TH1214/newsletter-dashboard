@@ -19,7 +19,7 @@ import urllib.error
 
 TRANSLATE_PROMPT_PATH = "scripts/translate_prompt.md"
 GEMINI_MODEL = "gemini-1.5-flash"
-GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
+GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1/models"
 
 
 def call_gemini(api_key: str, prompt: str) -> str:
