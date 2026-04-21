@@ -6,14 +6,20 @@ GitHub Actions 上で実行される。GITHUB_TOKEN で認証。
 順次翻訳してから 1 本の Markdown に結合する。本文を短縮・要約して
 捨てることは禁止。front matter は先頭 1 回のみ。
 
+レート制限 (HTTP 429) 対策:
+  - チャンク間に CHUNK_SLEEP_SEC 秒スリープ (既定 7s = 10 RPM)
+  - 429 受信時は exponential backoff で最大 MAX_RETRIES 回リトライ
+
 Usage:
     python scripts/translate_gemini.py <source> <date> < email_content.txt > translated.md
 
 Env:
     GITHUB_TOKEN             必須。workflow が渡す GITHUB_TOKEN
     TRANSLATION_MODEL        既定: openai/gpt-4o-mini  (本番推奨: openai/gpt-4.1)
-    GITHUB_MODELS_ENDPOINT   既定: https://models.github.ai/inference  (ベース URL)
-    CHUNK_CHAR_LIMIT         既定: 4800  (1 チャンクに含める最大文字数)
+    GITHUB_MODELS_ENDPOINT   既定: https://models.github.ai/inference
+    CHUNK_CHAR_LIMIT         既定: 6500  (1 チャンクに含める最大文字数)
+    CHUNK_SLEEP_SEC          既定: 7     (チャンク間スリープ秒数、rate limit 対策)
+    MAX_RETRIES              既定: 3     (HTTP 429 時の最大リトライ回数)
 
 Exit codes:
     0: 成功
@@ -24,6 +30,7 @@ import sys
 import os
 import re
 import json
+import time
 import urllib.request
 import urllib.error
 
@@ -31,14 +38,27 @@ TRANSLATE_PROMPT_PATH = "scripts/translate_prompt.md"
 DEFAULT_ENDPOINT = "https://models.github.ai/inference"
 DEFAULT_MODEL = "openai/gpt-4o-mini"
 
-# GPT-4.1 の入力上限は 8000 tokens。translate_prompt.md (~1500 tok) と
-# チャンク指示 (~200 tok) を除いた安全域として本文 4800 文字を既定とする。
-# 日本語/英語混在で 1 tok ≈ 3 chars 想定 → 4800 chars ≈ 1600 tok。
-DEFAULT_CHUNK_CHAR_LIMIT = 4800
+# GPT-4.1 の入力上限は 8000 tokens。translate_prompt.md (~600 tok) と
+# チャンク指示 (~200 tok) を除いた安全域として本文 6500 文字を既定とする。
+# 日本語/英語混在で 1 tok ≈ 3 chars 想定 → 6500 chars ≈ 2200 tok。
+# チャンク数削減により 429 rate limit (GPT-4.1 free tier: 10 RPM / 50 req/day) の
+# 露出を下げる。さらに各チャンク呼び出し間に CHUNK_SLEEP_SEC 秒スリープし、
+# 429 を受けたら exponential backoff でリトライする。
+DEFAULT_CHUNK_CHAR_LIMIT = 6500
+DEFAULT_CHUNK_SLEEP_SEC = 7
+DEFAULT_MAX_RETRIES = 3
+
+# 429 受信時のバックオフ遅延 (秒)。長さが MAX_RETRIES を下回る場合は末尾値を使い回す。
+BACKOFF_DELAYS = [15, 30, 60]
 
 
-def call_github_models(base_url: str, token: str, model: str, prompt: str) -> str:
-    """GitHub Models (OpenAI 互換) を呼び出して翻訳結果を返す"""
+def call_github_models(base_url: str, token: str, model: str, prompt: str,
+                       max_retries: int = DEFAULT_MAX_RETRIES) -> str:
+    """GitHub Models (OpenAI 互換) を呼び出して翻訳結果を返す。
+
+    HTTP 429 (rate limit) の場合は exponential backoff で最大 max_retries 回リトライ。
+    その他のエラーは即座に sys.exit(1)。
+    """
     url = base_url.rstrip("/") + "/chat/completions"
     payload = {
         "model": model,
@@ -48,44 +68,60 @@ def call_github_models(base_url: str, token: str, model: str, prompt: str) -> st
         "temperature": 0.3,
         "max_tokens": 8192,
     }
-
     data = json.dumps(payload).encode("utf-8")
-    req = urllib.request.Request(
-        url,
-        data=data,
-        headers={
-            "Authorization": f"Bearer {token}",
-            "Accept": "application/vnd.github+json",
-            "Content-Type": "application/json",
-            "X-GitHub-Api-Version": "2022-11-28",
-        },
-        method="POST",
-    )
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json",
+        "Content-Type": "application/json",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
 
-    try:
-        with urllib.request.urlopen(req) as resp:
-            result = json.loads(resp.read().decode("utf-8"))
-
-        text = result["choices"][0]["message"]["content"]
-        usage = result.get("usage", {})
-        print(
-            f"[github-models] OK model={model} "
-            f"tokens=in:{usage.get('prompt_tokens','?')}/out:{usage.get('completion_tokens','?')}",
-            file=sys.stderr,
-        )
-        return text
-
-    except urllib.error.HTTPError as e:
-        body = e.read().decode("utf-8", errors="replace")
+    last_error_msg = ""
+    for attempt in range(max_retries + 1):
+        req = urllib.request.Request(url, data=data, headers=headers, method="POST")
         try:
-            msg = json.loads(body).get("error", {}).get("message", body)
-        except Exception:
-            msg = body
-        print(f"[error] GitHub Models HTTP {e.code}: {msg}", file=sys.stderr)
-        sys.exit(1)
-    except Exception as e:
-        print(f"[error] Unexpected error: {type(e).__name__}: {e}", file=sys.stderr)
-        sys.exit(1)
+            with urllib.request.urlopen(req) as resp:
+                result = json.loads(resp.read().decode("utf-8"))
+
+            text = result["choices"][0]["message"]["content"]
+            usage = result.get("usage", {})
+            print(
+                f"[github-models] OK model={model} "
+                f"tokens=in:{usage.get('prompt_tokens','?')}/out:{usage.get('completion_tokens','?')}"
+                + (f" (retry {attempt})" if attempt > 0 else ""),
+                file=sys.stderr,
+            )
+            return text
+
+        except urllib.error.HTTPError as e:
+            body = e.read().decode("utf-8", errors="replace")
+            try:
+                msg = json.loads(body).get("error", {}).get("message", body)
+            except Exception:
+                msg = body
+            last_error_msg = f"HTTP {e.code}: {msg}"
+
+            # 429 (rate limit) はリトライ対象
+            if e.code == 429 and attempt < max_retries:
+                delay = BACKOFF_DELAYS[attempt] if attempt < len(BACKOFF_DELAYS) else BACKOFF_DELAYS[-1]
+                print(
+                    f"[github-models] HTTP 429 rate-limited; backing off {delay}s "
+                    f"(attempt {attempt + 1}/{max_retries})",
+                    file=sys.stderr,
+                )
+                time.sleep(delay)
+                continue
+
+            print(f"[error] GitHub Models {last_error_msg}", file=sys.stderr)
+            sys.exit(1)
+
+        except Exception as e:
+            print(f"[error] Unexpected error: {type(e).__name__}: {e}", file=sys.stderr)
+            sys.exit(1)
+
+    # ここに来ることは通常無い (ループ内で return か sys.exit) が念のため
+    print(f"[error] GitHub Models exhausted retries: {last_error_msg}", file=sys.stderr)
+    sys.exit(1)
 
 
 def split_into_chunks(text: str, limit: int) -> list:
@@ -245,15 +281,27 @@ def main():
         sys.exit(1)
     model = os.environ.get("TRANSLATION_MODEL", DEFAULT_MODEL)
     base_url = os.environ.get("GITHUB_MODELS_ENDPOINT", DEFAULT_ENDPOINT)
+
     try:
         chunk_limit = int(os.environ.get("CHUNK_CHAR_LIMIT", DEFAULT_CHUNK_CHAR_LIMIT))
     except ValueError:
         chunk_limit = DEFAULT_CHUNK_CHAR_LIMIT
 
+    try:
+        chunk_sleep_sec = float(os.environ.get("CHUNK_SLEEP_SEC", DEFAULT_CHUNK_SLEEP_SEC))
+    except ValueError:
+        chunk_sleep_sec = DEFAULT_CHUNK_SLEEP_SEC
+
+    try:
+        max_retries = int(os.environ.get("MAX_RETRIES", DEFAULT_MAX_RETRIES))
+    except ValueError:
+        max_retries = DEFAULT_MAX_RETRIES
+
     print(
         f"[github-models] endpoint={base_url} model={model} "
         f"token={token[:4]}...{token[-4:]} (len={len(token)}) "
-        f"chunk_limit={chunk_limit}",
+        f"chunk_limit={chunk_limit} chunk_sleep={chunk_sleep_sec}s "
+        f"max_retries={max_retries}",
         file=sys.stderr,
     )
 
@@ -286,7 +334,7 @@ def main():
         full_prompt = build_single_chunk_prompt(translate_prompt, source, date, chunks[0])
         print(f"[github-models] Full prompt: {len(full_prompt)} bytes", file=sys.stderr)
         print("[github-models] Calling GitHub Models (single chunk)...", file=sys.stderr)
-        result = call_github_models(base_url, token, model, full_prompt)
+        result = call_github_models(base_url, token, model, full_prompt, max_retries=max_retries)
         result = strip_code_fences(result)
         print(f"[github-models] Output: {len(result)} bytes", file=sys.stderr)
         print(result)
@@ -303,22 +351,28 @@ def main():
             f"(prompt={len(prompt)} bytes, chunk={len(chunk)} chars)...",
             file=sys.stderr,
         )
-        result = call_github_models(base_url, token, model, prompt)
+        result = call_github_models(base_url, token, model, prompt, max_retries=max_retries)
         result = strip_code_fences(result)
 
         fm, body = extract_front_matter(result)
         if i == 1:
-            # PART 1 の front matter を採用。本文は重複除去のため fm を除いたものだけ。
             front_matter = fm
             bodies.append(body)
         else:
-            # PART 2 以降に front matter が付いていたら破棄し、本文のみ連結。
             if fm is not None:
                 print(
                     f"[github-models] [warn] chunk {i} returned an extra front matter; discarding",
                     file=sys.stderr,
                 )
             bodies.append(body)
+
+        # チャンク間スリープ (最終チャンクの後は不要)
+        if i < total and chunk_sleep_sec > 0:
+            print(
+                f"[github-models] sleeping {chunk_sleep_sec}s before next chunk...",
+                file=sys.stderr,
+            )
+            time.sleep(chunk_sleep_sec)
 
     if front_matter is None:
         print("[github-models] [warn] PART 1 did not produce front matter; using fallback",
