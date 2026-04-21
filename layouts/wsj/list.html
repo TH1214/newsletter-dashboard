@@ -1,0 +1,231 @@
+{{- /*
+  WSJ · The 10-Point — Section Cover Page (INEOS-style)
+  プロトタイプの視覚アイデンティティを "表紙" として恒常表示。
+  今日の配信があれば CTA で single ページへ、下部にアーカイブリスト。
+*/ -}}
+<!DOCTYPE html>
+<html lang="{{ site.Language.LanguageCode | default "ja" }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ .Title }} — Bolgheri</title>
+<meta name="description" content="{{ .Params.description | default "WSJ The 10-Point 日本語翻訳アーカイブ" }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400;1,9..144,500;1,9..144,700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0A1E3F;
+    --navy-deep:#06142D;
+    --navy-mid:#12305E;
+    --blue:#2E5BFF;
+    --sky:#7FC0E5;
+    --paper:#F7F4EE;
+    --paper-alt:#EDE8DC;
+    --ink:#0A0F1A;
+    --rule:#CFC6B2;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{background:var(--paper);color:var(--ink);font-family:'Space Grotesk',sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+
+  .topbar{display:flex;justify-content:space-between;align-items:center;padding:18px 56px;background:var(--navy);border-bottom:3px solid var(--blue);font-family:'Space Grotesk',sans-serif;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:rgba(255,255,255,.8);font-weight:500}
+  .topbar a:hover{color:var(--sky)}
+  .topbar .logo{font-family:'Fraunces',serif;font-style:italic;font-size:18px;letter-spacing:.01em;text-transform:none;color:#fff;font-weight:500}
+
+  .cover{position:relative;height:88vh;min-height:640px;overflow:hidden;background:var(--navy)}
+  .cover-photo{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,30,63,.45) 0%,rgba(10,30,63,.85) 100%),var(--hero-img,url('https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1800&q=85')) center/cover no-repeat;filter:saturate(.85);transition:background-image .4s ease}
+  .cover-curve{position:absolute;top:-20%;left:-10%;width:60%;height:140%;border-radius:50%;border:2px solid rgba(127,192,229,.18);pointer-events:none}
+  .cover-curve.c2{left:-30%;width:80%;border-color:rgba(127,192,229,.08)}
+  .cover-inner{position:relative;z-index:2;height:100%;padding:48px 56px 64px;display:flex;flex-direction:column;justify-content:space-between;max-width:1320px;margin:0 auto}
+  .cover-top{display:flex;justify-content:space-between;align-items:flex-start;color:var(--paper)}
+  .W-mark{width:56px;height:56px;border:2px solid var(--paper);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-style:italic;font-size:26px;color:var(--paper);font-weight:500}
+  .cover-top .right{text-align:right;font-size:10.5px;letter-spacing:.3em;line-height:1.9;color:rgba(255,255,255,.7);font-weight:500;text-transform:uppercase}
+  .cover-top .right strong{color:var(--paper);font-weight:600}
+
+  .mega-title{font-family:'Archivo Black',sans-serif;font-size:clamp(64px,9vw,140px);line-height:.92;letter-spacing:-.035em;color:var(--paper);text-transform:uppercase}
+  .mega-title em{font-family:'Fraunces',serif;font-style:italic;text-transform:none;color:var(--sky);font-weight:500;letter-spacing:-.02em;display:block;margin-top:8px}
+  .cover-cta{display:inline-flex;align-items:center;gap:14px;margin-top:28px;padding:14px 28px;background:var(--blue);color:var(--paper);font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:700;letter-spacing:.26em;text-transform:uppercase;transition:all .2s;border:2px solid var(--blue)}
+  .cover-cta:hover{background:transparent;color:var(--paper)}
+  .cover-cta::after{content:"→"}
+
+  .cover-foot{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;padding-top:22px;border-top:1px solid rgba(255,255,255,.25);color:var(--paper)}
+  .cfi{font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:rgba(255,255,255,.55);font-weight:500}
+  .cfi b{display:block;color:var(--paper);font-size:18px;font-weight:700;margin-top:6px;letter-spacing:.03em;text-transform:none;font-family:'Space Grotesk',sans-serif}
+
+  .blue-edge{position:absolute;top:0;right:0;width:6px;height:100%;background:var(--blue);z-index:3}
+
+  .lead{padding:90px 56px;max-width:1100px;margin:0 auto}
+  .lead .kicker{font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:600;letter-spacing:.3em;text-transform:uppercase;color:var(--blue);margin-bottom:22px;display:inline-flex;align-items:center;gap:14px}
+  .lead .kicker::before,.lead .kicker::after{content:"";width:32px;height:1.5px;background:var(--blue)}
+  .lead p{font-family:'Fraunces',serif;font-weight:400;font-size:26px;line-height:1.5;color:var(--ink);letter-spacing:-.005em}
+  .lead p em{font-style:italic;color:var(--blue)}
+
+  /* ---------- ARCHIVE ---------- */
+  .archive{padding:80px 56px 100px;background:var(--paper-alt);border-top:1px solid var(--rule)}
+  .arch-inner{max-width:1200px;margin:0 auto}
+  .arch-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:48px;padding-bottom:18px;border-bottom:2px solid var(--navy)}
+  .arch-head h2{font-family:'Archivo Black',sans-serif;font-size:clamp(36px,4.2vw,60px);line-height:.95;letter-spacing:-.025em;text-transform:uppercase;color:var(--navy)}
+  .arch-head h2 em{font-family:'Fraunces',serif;font-style:italic;text-transform:none;color:var(--blue);font-weight:500;letter-spacing:-.01em}
+  .arch-head .meta{font-family:'Space Grotesk',sans-serif;font-size:10.5px;letter-spacing:.3em;text-transform:uppercase;color:var(--navy-mid);font-weight:600;text-align:right;line-height:1.7}
+
+  .arch-list{display:flex;flex-direction:column}
+  .arch-row{display:grid;grid-template-columns:80px 1fr 140px;gap:28px;padding:22px 0;border-top:1px solid var(--rule);align-items:baseline;transition:background .2s}
+  .arch-row:first-child{border-top:none}
+  .arch-row:hover{background:rgba(46,91,255,.05)}
+  .arch-row .n{font-family:'Fraunces',serif;font-style:italic;font-weight:500;color:var(--blue);font-size:24px}
+  .arch-row h3{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:21px;line-height:1.3;color:var(--ink);letter-spacing:-.01em}
+  .arch-row h3 em{font-family:'Fraunces',serif;font-style:italic;color:var(--blue);font-weight:500}
+  .arch-row .summary{display:block;font-size:13px;line-height:1.55;color:var(--navy-mid);margin-top:6px;font-weight:400;letter-spacing:0}
+  .arch-row .date{text-align:right;font-family:'Space Grotesk',sans-serif;font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--navy-mid);font-weight:600}
+  .arch-row .date b{display:block;color:var(--navy);font-family:'Fraunces',serif;font-style:italic;font-size:20px;font-weight:500;letter-spacing:0;text-transform:none;margin-bottom:4px}
+
+  .arch-empty{padding:80px 0;text-align:center;font-family:'Fraunces',serif;font-style:italic;font-size:22px;color:var(--navy-mid)}
+
+  .close{padding:60px 56px;background:var(--navy);text-align:center;color:var(--paper)}
+  .close .line{font-family:'Fraunces',serif;font-style:italic;font-size:24px;margin-bottom:24px;line-height:1.35;color:var(--sky)}
+  .close .line::before,.close .line::after{content:"—";color:var(--blue);margin:0 18px}
+  .back{display:inline-block;padding:15px 32px;background:transparent;color:var(--paper);font-family:'Space Grotesk',sans-serif;font-size:11.5px;letter-spacing:.28em;text-transform:uppercase;font-weight:600;transition:all .25s;border:2px solid var(--paper)}
+  .back:hover{background:var(--paper);color:var(--navy)}
+  .footer{display:flex;justify-content:space-between;padding:22px 56px;background:var(--navy-deep);color:rgba(255,255,255,.5);font-family:'Space Grotesk',sans-serif;font-size:10px;letter-spacing:.24em;text-transform:uppercase;font-weight:500}
+
+  @media (max-width:1000px){
+    .cover-foot{grid-template-columns:repeat(2,1fr)}
+    .mega-title{font-size:56px}
+    .lead p{font-size:20px}
+    .arch-row{grid-template-columns:50px 1fr;gap:16px}
+    .arch-row .date{grid-column:2}
+  }
+  @media (max-width:680px){
+    .topbar{padding:14px 20px;font-size:10px;letter-spacing:.18em;flex-wrap:wrap;gap:6px}
+    .topbar .logo{font-size:15px}
+    .cover{min-height:520px;height:auto;padding:0}
+    .cover-inner{padding:32px 22px 40px;gap:32px}
+    .cover-top{flex-direction:column;gap:20px}
+    .cover-top .right{text-align:left;font-size:9.5px;letter-spacing:.2em;line-height:1.8}
+    .W-mark{width:44px;height:44px;font-size:20px}
+    .mega-title{font-size:44px;letter-spacing:-.025em}
+    .mega-title em{font-size:28px;margin-top:6px}
+    .cover-cta{margin-top:20px;padding:11px 20px;font-size:10.5px;letter-spacing:.2em}
+    .cover-foot{grid-template-columns:1fr 1fr;gap:14px;padding-top:18px}
+    .cfi{font-size:9.5px;letter-spacing:.18em}
+    .cfi b{font-size:14px}
+    .lead{padding:50px 22px}
+    .lead .kicker{font-size:10px;letter-spacing:.24em;margin-bottom:16px;gap:10px}
+    .lead .kicker::before,.lead .kicker::after{width:20px}
+    .lead p{font-size:17px;line-height:1.55}
+    .archive{padding:50px 22px 70px}
+    .arch-head{flex-direction:column;align-items:flex-start;gap:14px;margin-bottom:28px;padding-bottom:14px}
+    .arch-head h2{font-size:34px}
+    .arch-head .meta{text-align:left;font-size:9.5px;letter-spacing:.22em}
+    .arch-row{grid-template-columns:38px 1fr;gap:12px;padding:18px 0}
+    .arch-row .n{font-size:19px}
+    .arch-row h3{font-size:17px;line-height:1.35}
+    .arch-row .summary{font-size:12.5px;line-height:1.5}
+    .arch-row .date{text-align:left;font-size:9.5px;letter-spacing:.2em}
+    .arch-row .date b{font-size:16px}
+    .arch-empty{padding:56px 0;font-size:17px}
+    .close{padding:44px 22px}
+    .close .line{font-size:18px;line-height:1.4}
+    .close .line::before,.close .line::after{margin:0 10px}
+    .back{padding:12px 22px;font-size:10.5px;letter-spacing:.22em}
+    .footer{flex-direction:column;gap:8px;padding:18px 22px;text-align:center;font-size:9.5px;letter-spacing:.18em}
+  }
+</style>
+</head>
+<body>
+
+<nav class="topbar">
+  <a href="{{ "/" | relURL }}">← Bolgheri Daily Brief</a>
+  <span class="logo">WSJ · The 10-Point</span>
+  <span>{{ now.Format "Monday · 02 January 2006" }}</span>
+</nav>
+
+{{- $latest := where site.RegularPages "Section" "wsj" | first 1 }}
+{{- $latestPost := "" }}
+{{- with index $latest 0 }}{{ $latestPost = . }}{{ end }}
+{{- $heroUrl := "" -}}
+{{- with $latestPost }}{{ $heroUrl = .Params.hero_image | default "" }}{{ end -}}
+
+<!-- COVER HERO -->
+<section class="cover"{{ with $heroUrl }} style="--hero-img:url('{{ . | relURL }}')"{{ end }}>
+  <div class="cover-photo"></div>
+  <span class="cover-curve"></span>
+  <span class="cover-curve c2"></span>
+  <span class="blue-edge"></span>
+  <div class="cover-inner">
+    <div class="cover-top">
+      <span class="W-mark">W</span>
+      <div class="right">Version II<br><strong>{{ now.Format "January 2006" }}</strong><br>wsj.com</div>
+    </div>
+
+    <div>
+      {{- with $latestPost }}
+        <h1 class="mega-title">{{ .Title }}</h1>
+        <a href="{{ .RelPermalink }}" class="cover-cta">Read Today's Full Dispatch</a>
+      {{- else }}
+        <h1 class="mega-title">The <em>10-Point</em>,<br>Decoded Daily.</h1>
+      {{- end }}
+    </div>
+
+    <div class="cover-foot">
+      <div class="cfi">Edition<b>Vol. II</b></div>
+      <div class="cfi">Dispatched<b>06:00 JST</b></div>
+      <div class="cfi">Archive<b>{{ len (where site.RegularPages "Section" "wsj") }} posts</b></div>
+      <div class="cfi">Sections<b>10 Points</b></div>
+    </div>
+  </div>
+</section>
+
+{{- with $latestPost }}
+<!-- LEAD: latest summary -->
+<section class="lead">
+  <div class="kicker">Today's Lead · {{ .Date.Format "02 Jan 2006" }}</div>
+  <p>{{ with .Params.summary }}{{ . }}{{ else }}{{ .Summary | plainify | truncate 240 }}{{ end }}</p>
+</section>
+{{- end }}
+
+<!-- ARCHIVE -->
+<section class="archive">
+  <div class="arch-inner">
+    <div class="arch-head">
+      <h2>The <em>Archive</em></h2>
+      <div class="meta">
+        All Dispatches<br>
+        <span style="color:var(--blue);font-family:'Fraunces',serif;font-style:italic;font-size:22px;letter-spacing:0;text-transform:none">{{ len (where site.RegularPages "Section" "wsj") }}</span>
+      </div>
+    </div>
+
+    {{- $posts := where site.RegularPages "Section" "wsj" }}
+    {{- if $posts }}
+    <div class="arch-list">
+      {{- range $i, $p := $posts }}
+      <a href="{{ $p.RelPermalink }}" class="arch-row">
+        <div class="n">{{ printf "%02d" (sub (len $posts) $i) }}</div>
+        <div>
+          <h3>{{ $p.Title }}</h3>
+          {{- with $p.Params.summary }}<span class="summary">{{ . }}</span>{{ end }}
+        </div>
+        <div class="date"><b>{{ $p.Date.Format "Jan 02" }}</b>{{ $p.Date.Format "2006" }}</div>
+      </a>
+      {{- end }}
+    </div>
+    {{- else }}
+    <div class="arch-empty">Awaiting first dispatch.</div>
+    {{- end }}
+  </div>
+</section>
+
+<section class="close">
+  <div class="line">Delivered fresh, every weekday at six.</div>
+  <a href="{{ "/" | relURL }}" class="back">Return to Today's Edition</a>
+</section>
+
+<div class="footer">
+  <span>© MMXXVI Bolgheri</span>
+  <span>Source · Wall Street Journal · wsj.com</span>
+</div>
+
+{{- partial "google_analytics.html" . -}}
+</body>
+</html>
