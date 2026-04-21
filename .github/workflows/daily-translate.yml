@@ -43,6 +43,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TRANSLATION_MODEL: openai/gpt-4.1
           GITHUB_MODELS_ENDPOINT: https://models.github.ai/inference
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           TODAY=$(date +%Y-%m-%d)
           ALL_SOURCES="wsj nyt-bn short-squeez skift buysiders nyt-op business-insider"
@@ -101,6 +102,18 @@ jobs:
                 cp "/tmp/translated_${SOURCE}.md" "content/${SOURCE}/${TODAY}.md"
                 echo "✅ Translated $SOURCE → content/${SOURCE}/${TODAY}.md"
                 TRANSLATED=$((TRANSLATED + 1))
+
+                # ── Hero 画像生成 (Pollinations.ai / non-blocking) ──
+                echo "🎨 Generating hero image for $SOURCE..."
+                set +e
+                python scripts/generate_hero_image.py "$SOURCE" "$TODAY"
+                IMG_EXIT=$?
+                set -e
+                if [ $IMG_EXIT -eq 0 ]; then
+                  echo "🎨 ✅ Hero image generated for $SOURCE"
+                else
+                  echo "🎨 ⚠️ Hero image generation failed for $SOURCE (exit=$IMG_EXIT, non-blocking)"
+                fi
               else
                 echo "⚠️ Output missing front matter for $SOURCE"
                 head -5 "/tmp/translated_${SOURCE}.md"
@@ -123,12 +136,12 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add content/
+          git add content/ static/images/ 2>/dev/null || git add content/
           if git diff --cached --quiet; then
-            echo "No new translations to commit"
+            echo "No new translations or images to commit"
           else
             CHANGED=$(git diff --cached --name-only | wc -l)
             git commit -m "Daily newsletter translation $(date +%Y-%m-%d) [${CHANGED} file(s)]"
             git push
-            echo "✅ Pushed ${CHANGED} translation(s)"
+            echo "✅ Pushed ${CHANGED} file(s)"
           fi

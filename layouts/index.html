@@ -1,0 +1,369 @@
+{{- /*
+  Bolgheri Daily Brief — Top Page (Monocle-style)
+  Overrides PaperMod's home template entirely.
+*/ -}}
+<!DOCTYPE html>
+<html lang="{{ site.Language.LanguageCode | default "ja" }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ site.Title }} — The Daily Brief</title>
+<meta name="description" content="{{ site.Params.homeInfoParams.Content | default "英語ニュースレターの日本語翻訳ダッシュボード" }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;0,900;1,400;1,500;1,700&family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --terracotta:#C17F5E;
+    --terracotta-deep:#9E5E42;
+    --cream:#E8DDC9;
+    --cream-light:#F5EDE0;
+    --walnut:#5D4232;
+    --walnut-deep:#3D2A1E;
+    --green:#4A5D3F;
+    --green-dark:#2F3D28;
+    --ink:#241811;
+    --rule:#BFA987;
+    --paper:#FBF5EA;
+    --gold:#B8995B;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{background:var(--paper);color:var(--ink);font-family:'Lora',Georgia,serif;line-height:1.6;-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+  img{max-width:100%;display:block}
+  .page{max-width:1320px;margin:0 auto;padding:28px 48px 80px;position:relative}
+
+  .masthead-top{display:flex;justify-content:space-between;align-items:center;font-family:'Inter',sans-serif;font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--walnut-deep);padding:4px 0}
+  .masthead-top .dot{color:var(--terracotta-deep)}
+  hr.rule-thick{border:none;border-top:2.5px solid var(--ink);margin:10px 0}
+  hr.rule-thin{border:none;border-top:.75px solid var(--rule);margin:0}
+  .logo-wrap{text-align:center;padding:28px 0 16px}
+  .logo{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:clamp(88px,11vw,152px);letter-spacing:.01em;line-height:.85;color:var(--ink)}
+  .logo em{font-style:italic;font-weight:400;color:var(--terracotta-deep)}
+  .sub-logo{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:22px;color:var(--walnut);margin-top:10px;letter-spacing:.02em}
+  .sub-logo::before,.sub-logo::after{content:"·";margin:0 14px;color:var(--terracotta-deep)}
+
+  .crossbar{display:flex;flex-wrap:wrap;align-items:center;gap:0;padding:18px 0;font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:500;letter-spacing:.04em;color:var(--ink)}
+  .crossbar a{padding:10px 26px;border-right:1px solid var(--rule);transition:color .2s;position:relative}
+  .crossbar a:first-child{padding-left:0}
+  .crossbar a:hover{color:var(--terracotta-deep);font-style:italic}
+  .crossbar .random{margin-left:auto;border:1.5px solid var(--ink);padding:11px 24px;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;background:var(--ink);color:var(--paper);cursor:pointer;transition:all .25s}
+  .crossbar .random:hover{background:var(--terracotta-deep);border-color:var(--terracotta-deep)}
+
+  .hero{display:grid;grid-template-columns:1.35fr 1fr;gap:40px;margin-top:34px;align-items:stretch}
+  .hero-img{display:block;background:linear-gradient(135deg,var(--terracotta) 0%,var(--walnut) 100%);background-size:cover;background-position:center;min-height:clamp(260px,56vw,480px);position:relative;cursor:pointer;transition:filter .35s ease, transform .35s ease;overflow:hidden;text-decoration:none}
+  .hero-img.is-loaded{background-color:transparent}
+  .hero-img:hover{filter:brightness(1.04) saturate(1.06)}
+  .hero-img:hover .hero-cap{background:rgba(36,24,17,.92);color:var(--paper)}
+  .hero-cap{position:absolute;bottom:-24px;left:0;right:0;font-family:'Inter',sans-serif;font-size:9.5px;letter-spacing:.28em;color:var(--walnut);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:4px 0;transition:background .25s, color .25s}
+  .hero-cap em{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:12px;letter-spacing:.04em;color:var(--terracotta-deep);text-transform:none;margin:0 8px}
+  .hero-copy{padding:20px 0 24px;display:flex;flex-direction:column;justify-content:center}
+  .kicker{font-family:'Inter',sans-serif;font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--terracotta-deep);margin-bottom:18px;font-weight:600}
+  .kicker::before{content:"❖  "}
+  .hero-copy h2{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:56px;line-height:1.02;letter-spacing:-.01em;margin-bottom:22px;color:var(--ink)}
+  .hero-copy h2 em{font-style:italic;color:var(--terracotta-deep);font-weight:400}
+  .hero-copy .lede{font-family:'Lora',serif;font-size:17px;line-height:1.65;color:var(--walnut-deep);margin-bottom:22px}
+  .hero-copy .lede::first-letter{font-family:'Cormorant Garamond',serif;font-size:68px;line-height:.85;float:left;padding:6px 10px 0 0;color:var(--terracotta-deep);font-weight:500}
+  .byline{font-family:'Inter',sans-serif;font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--walnut);margin-top:auto;border-top:.75px solid var(--rule);padding-top:14px}
+  .byline strong{color:var(--ink);font-weight:600}
+
+  .section-head{display:flex;align-items:baseline;justify-content:space-between;margin:78px 0 28px;padding-bottom:14px;border-bottom:2px solid var(--ink)}
+  .section-head h3{font-family:'Cormorant Garamond',serif;font-size:38px;font-weight:500;letter-spacing:-.005em}
+  .section-head h3 em{font-style:italic;color:var(--terracotta-deep);font-weight:400}
+  .section-head .meta{font-family:'Inter',sans-serif;font-size:10.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--walnut)}
+
+  .briefs{display:grid;grid-template-columns:repeat(12,1fr);gap:38px 32px}
+  .brief{display:flex;flex-direction:column;transition:transform .3s}
+  .brief:hover{transform:translateY(-3px)}
+  .brief .thumb{aspect-ratio:4/3;background:var(--cream);margin-bottom:16px;position:relative;overflow:hidden;background-size:cover;background-position:center}
+  .brief .thumb::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,rgba(36,24,17,.3));pointer-events:none}
+  .brief .num{position:absolute;top:14px;left:14px;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:32px;color:var(--paper);z-index:2;text-shadow:0 2px 8px rgba(0,0,0,.4);font-weight:400}
+  .brief .src-tag{position:absolute;bottom:14px;left:14px;font-family:'Inter',sans-serif;font-size:9.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--paper);background:rgba(36,24,17,.75);padding:5px 10px;z-index:2;font-weight:500}
+  .brief h4{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:26px;line-height:1.15;letter-spacing:-.005em;margin-bottom:10px;color:var(--ink)}
+  .brief h4 em{font-style:italic;color:var(--terracotta-deep);font-weight:400}
+  .brief .excerpt{font-family:'Lora',serif;font-size:14.5px;line-height:1.55;color:var(--walnut-deep);margin-bottom:12px}
+  .brief .foot{margin-top:auto;display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:.75px solid var(--rule);font-family:'Inter',sans-serif;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--walnut)}
+  .brief .foot .read{color:var(--ink);font-weight:600;letter-spacing:.26em}
+  .brief .foot .read::after{content:" →"}
+
+  .brief.feature{grid-column:span 7;grid-row:span 2}
+  .brief.feature .thumb{aspect-ratio:16/10}
+  .brief.feature h4{font-size:44px;line-height:1.06;margin-bottom:14px}
+  .brief.feature .excerpt{font-size:17px;line-height:1.62;margin-bottom:18px}
+  .brief.feature .num{font-size:48px;top:20px;left:22px}
+
+  .brief.medium{grid-column:span 5}
+  .brief.small{grid-column:span 4}
+
+  /* Per-section default fallback thumbnails */
+  .th-wsj{background:linear-gradient(135deg,#0A1E3F 0%,#1B3A66 100%),url('https://images.unsplash.com/photo-1444653614773-995cb1ef9efa?w=1000&q=80') center/cover;background-blend-mode:multiply}
+  .th-nyt-bn{background:linear-gradient(180deg,rgba(0,0,0,.15),rgba(0,0,0,.55)),url('https://images.unsplash.com/photo-1495020689067-958852a7765e?w=1000&q=80') center/cover}
+  .th-nyt-op{background:linear-gradient(180deg,rgba(245,237,224,.2),rgba(93,66,50,.35)),url('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=1000&q=80') center/cover}
+  .th-short-squeez{background:linear-gradient(135deg,#2F3D28 0%,#4A5D3F 100%),url('https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=1000&q=80') center/cover;background-blend-mode:multiply}
+  .th-skift{background:linear-gradient(180deg,rgba(0,0,0,.1),rgba(0,0,0,.4)),url('https://images.unsplash.com/photo-1528909514045-2fa4ac7a08ba?w=1000&q=80') center/cover}
+  .th-buysiders{background:linear-gradient(180deg,rgba(245,237,224,.05),rgba(36,24,17,.2)),url('https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1000&q=80') center/cover}
+  .th-business-insider{background:linear-gradient(180deg,rgba(0,0,0,.05),rgba(0,0,0,.35)),url('https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1000&q=80') center/cover}
+
+  .colophon{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:56px;margin-top:100px;padding-top:40px;border-top:2.5px solid var(--ink)}
+  .colophon h5{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:22px;margin-bottom:14px;color:var(--ink)}
+  .colophon h5 em{font-style:italic;color:var(--terracotta-deep)}
+  .colophon p{font-family:'Lora',serif;font-size:14px;line-height:1.65;color:var(--walnut-deep);margin-bottom:10px}
+  .colophon ul{list-style:none;font-family:'Inter',sans-serif;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--walnut-deep)}
+  .colophon li{padding:6px 0;border-bottom:.75px solid var(--rule);display:flex;justify-content:space-between}
+  .colophon li span.n{font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:500;color:var(--terracotta-deep);letter-spacing:0;text-transform:none;font-size:14px}
+
+  .footer{margin-top:60px;padding-top:24px;border-top:.75px solid var(--rule);display:flex;justify-content:space-between;align-items:center;font-family:'Inter',sans-serif;font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--walnut)}
+  .footer .stamp{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:16px;letter-spacing:.01em;text-transform:none;color:var(--terracotta-deep)}
+
+  .ornament{text-align:center;margin:40px 0;color:var(--rule);letter-spacing:1em;font-family:'Cormorant Garamond',serif}
+
+  @media (max-width:1080px){
+    .hero{grid-template-columns:1fr}
+    .brief.feature{grid-column:span 12}
+    .brief.medium{grid-column:span 6}
+    .brief.small{grid-column:span 6}
+    .colophon{grid-template-columns:1fr}
+  }
+  @media (max-width:680px){
+    .page{padding:20px 20px 50px}
+    .logo{font-size:72px}
+    .sub-logo{font-size:18px}
+    .masthead-top{font-size:9px;letter-spacing:.16em;flex-wrap:wrap;gap:4px;row-gap:2px;justify-content:center;text-align:center}
+    .hero{gap:24px;margin-top:22px}
+    .hero-img{min-height:260px}
+    .hero-cap{bottom:-20px;font-size:9px;letter-spacing:.2em}
+    .hero-copy{padding:8px 0 12px}
+    .hero-copy h2{font-size:38px;margin-bottom:14px}
+    .hero-copy .lede{font-size:15.5px;margin-bottom:14px}
+    .hero-copy .lede::first-letter{font-size:54px}
+    .kicker{margin-bottom:10px;font-size:10px;letter-spacing:.24em}
+    .brief.medium,.brief.small{grid-column:span 12}
+    .briefs{gap:28px 20px}
+    .brief.feature h4{font-size:32px}
+    .brief.feature .excerpt{font-size:15.5px}
+    .brief h4{font-size:22px}
+
+    /* Crossbar: horizontal scroll (preserves all 7 nav items + Surprise Me) */
+    .crossbar{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;white-space:nowrap;padding:14px 0;font-size:15px;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin:0 -20px;padding-left:20px;padding-right:20px}
+    .crossbar::-webkit-scrollbar{display:none}
+    .crossbar a{flex-shrink:0;padding:6px 14px;border-right:1px solid var(--rule)}
+    .crossbar a:first-child{padding-left:0}
+    .crossbar .random{flex-shrink:0;margin-left:12px;padding:8px 14px;font-size:10.5px;letter-spacing:.2em}
+
+    .section-head{margin:52px 0 22px}
+    .section-head h3{font-size:28px}
+    .section-head .meta{font-size:9px;letter-spacing:.22em}
+    .colophon{margin-top:64px;gap:32px;padding-top:28px}
+    .colophon h5{font-size:19px}
+    .colophon p{font-size:13.5px}
+    .footer{flex-direction:column;gap:10px;text-align:center}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  {{/* --- MASTHEAD --- */}}
+  <div class="masthead-top">
+    <span>{{ now.Format "Monday" | upper }} <span class="dot">·</span> {{ now.Format "02 January 2006" | upper }}</span>
+    <span>VOLUME II <span class="dot">·</span> ISSUE N° {{ now.Format "002" }}</span>
+    <span>TOKYO <span class="dot">·</span> DAILY DISPATCH</span>
+  </div>
+  <hr class="rule-thick">
+
+  <div class="logo-wrap">
+    <h1 class="logo">B<em>o</em>lgheri</h1>
+    <div class="sub-logo">The Daily Brief</div>
+  </div>
+
+  <hr class="rule-thick">
+
+  <nav class="crossbar">
+    <a href="{{ "wsj/" | relURL }}">WSJ 10-Point</a>
+    <a href="{{ "nyt-bn/" | relURL }}">NYT Breaking</a>
+    <a href="{{ "nyt-op/" | relURL }}">NYT Opinion</a>
+    <a href="{{ "buysiders/" | relURL }}">Buysiders OWS</a>
+    <a href="{{ "short-squeez/" | relURL }}">Short Squeez</a>
+    <a href="{{ "skift/" | relURL }}">Skift Daily</a>
+    <a href="{{ "business-insider/" | relURL }}">Business Insider</a>
+    <button class="random" onclick="surpriseMe()">Surprise Me →</button>
+  </nav>
+
+  {{/* --- HERO (dynamic: random per page load from article hero_image pool) --- */}}
+  <section class="hero">
+    <a class="hero-img" id="bolgheriHero" href="#" aria-label="Featured dispatch">
+      <span class="hero-cap" id="bolgheriHeroCap">PHOTOGRAPH <em>·</em> TOKYO</span>
+    </a>
+    <div class="hero-copy">
+      <div class="kicker">From the Editor</div>
+      <h2>A Morning Dispatch, <em>Unhurried &amp; Curated.</em></h2>
+      <p class="lede">毎朝6時、東京から。世界で最も鋭利な7媒体のニュースレターを集め、翻訳し、一杯のコーヒーに寄り添う静かな一冊として届ける。速報を追うためではなく、速報の意味を理解するための、ゆっくりとした朝の儀式である。</p>
+      <div class="byline">Edited by <strong>T. Hashiramoto</strong> · Tokyo Bureau · <span style="color:var(--terracotta-deep)">Vol. II</span></div>
+    </div>
+  </section>
+
+  {{/* --- HERO POOL (built at Hugo build time from all pages with hero_image frontmatter) --- */}}
+  {{- $heroPool := slice -}}
+  {{- $labelMap := dict "wsj" "WSJ 10-Point" "nyt-bn" "NYT Breaking" "nyt-op" "NYT Opinion" "buysiders" "Buysiders OWS" "short-squeez" "Short Squeez" "skift" "Skift Daily" "business-insider" "Business Insider" -}}
+  {{- range site.RegularPages -}}
+    {{- $page := . -}}
+    {{- with $page.Params.hero_image -}}
+      {{- $sec := $page.Section -}}
+      {{- $lbl := index $labelMap $sec | default (humanize $sec) -}}
+      {{- $url := . | relURL -}}
+      {{- $heroPool = $heroPool | append (dict "url" $url "title" $page.Title "link" $page.RelPermalink "section" $lbl "date" ($page.Date.Format "02 Jan 2006")) -}}
+    {{- end -}}
+  {{- end -}}
+  <script id="bolgheriHeroPool" type="application/json">{{ $heroPool | jsonify }}</script>
+
+  {{/* --- TODAY'S EDITION (dynamic from latest per section) --- */}}
+  <div class="section-head">
+    <h3>Today's <em>Edition</em></h3>
+    <div class="meta">Seven Dispatches · {{ now.Format "02 January 2006" }}</div>
+  </div>
+
+  <div class="briefs">
+    {{- $sections := slice
+      (dict "slug" "wsj"              "label" "WSJ 10-Point"      "size" "feature" "n" "01")
+      (dict "slug" "nyt-bn"           "label" "NYT Breaking"      "size" "medium"  "n" "02")
+      (dict "slug" "nyt-op"           "label" "NYT Opinion"       "size" "small"   "n" "03")
+      (dict "slug" "buysiders"        "label" "Buysiders OWS"     "size" "small"   "n" "04")
+      (dict "slug" "short-squeez"     "label" "Short Squeez"      "size" "small"   "n" "05")
+      (dict "slug" "skift"            "label" "Skift Daily"       "size" "small"   "n" "06")
+      (dict "slug" "business-insider" "label" "Business Insider"  "size" "small"   "n" "07")
+    -}}
+    {{- range $sections }}
+      {{- $slug := .slug }}
+      {{- $label := .label }}
+      {{- $size := .size }}
+      {{- $n := .n }}
+      {{- $latest := where site.RegularPages "Section" $slug | first 1 }}
+      {{- with index $latest 0 }}
+        {{/* Latest post exists — render with real content */}}
+        <a href="{{ .RelPermalink }}" class="brief {{ $size }}">
+          <div class="thumb th-{{ $slug }}"{{ with .Params.hero_image }} style="background-image:url('{{ . }}')"{{ end }}>
+            <span class="num"><em>N°</em> {{ $n }}</span>
+            <span class="src-tag">{{ $label }}</span>
+          </div>
+          <h4>{{ .Title }}</h4>
+          {{- with .Params.summary }}<p class="excerpt">{{ . }}</p>{{ end }}
+          <div class="foot"><span>{{ .Date.Format "02 Jan · 2006" }}</span><span class="read">Read</span></div>
+        </a>
+      {{- else }}
+        {{/* No post yet — fall back to section landing */}}
+        <a href="{{ $slug | relURL }}/" class="brief {{ $size }}">
+          <div class="thumb th-{{ $slug }}">
+            <span class="num"><em>N°</em> {{ $n }}</span>
+            <span class="src-tag">{{ $label }}</span>
+          </div>
+          <h4>Dispatch <em>Pending</em></h4>
+          <p class="excerpt">本日の翻訳は間もなく配信されます。アーカイブをご覧ください。</p>
+          <div class="foot"><span>Awaiting Dispatch</span><span class="read">Visit Section</span></div>
+        </a>
+      {{- end }}
+    {{- end }}
+  </div>
+
+  <div class="ornament">❖ · ❖ · ❖</div>
+
+  {{/* --- COLOPHON --- */}}
+  <section class="colophon">
+    <div>
+      <h5>The <em>Briefing</em> Index</h5>
+      <p>毎朝06:00 JST、GitHub Actions により自動的に翻訳・編集・配信される。人的介入は存在しない。ただし編集的判断は設計に刻まれている。</p>
+      <p style="font-style:italic;color:var(--terracotta-deep)">— Designed &amp; compiled from Tokyo.</p>
+    </div>
+    <div>
+      <h5>Today's <em>Sources</em></h5>
+      <ul>
+        <li><span>WSJ 10-Point</span><span class="n">01</span></li>
+        <li><span>NYT Breaking</span><span class="n">02</span></li>
+        <li><span>NYT Opinion</span><span class="n">03</span></li>
+        <li><span>Buysiders OWS</span><span class="n">04</span></li>
+        <li><span>Short Squeez</span><span class="n">05</span></li>
+        <li><span>Skift Daily</span><span class="n">06</span></li>
+        <li><span>Business Insider</span><span class="n">07</span></li>
+      </ul>
+    </div>
+    <div>
+      <h5>The <em>Masthead</em></h5>
+      <ul>
+        <li><span>Editor</span><span class="n">T. Hashiramoto</span></li>
+        <li><span>Bureau</span><span class="n">Tokyo</span></li>
+        <li><span>Engine</span><span class="n">GitHub Models</span></li>
+        <li><span>Delivery</span><span class="n">06:00 JST</span></li>
+        <li><span>Cost</span><span class="n">¥0 / month</span></li>
+        <li><span>Version</span><span class="n">Spec v1.1</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="footer">
+    <div>© MMXXVI Bolgheri · Published in Tokyo</div>
+    <div class="stamp">— Poured daily, at six. —</div>
+    <div>{{ site.BaseURL | replaceRE "https?://" "" | strings.TrimSuffix "/" }}</div>
+  </div>
+
+</div>
+
+<script>
+  function surpriseMe(){
+    const pages = ['wsj','nyt-bn','nyt-op','buysiders','short-squeez','skift','business-insider'];
+    const pick = pages[Math.floor(Math.random()*pages.length)];
+    window.location.href = '{{ site.BaseURL }}' + pick + '/';
+  }
+
+  /* --- Dynamic Hero Loader (Bolgheri / random-per-load) --- */
+  (function initBolgheriHero(){
+    const hero = document.getElementById('bolgheriHero');
+    const cap  = document.getElementById('bolgheriHeroCap');
+    if(!hero || !cap) return;
+
+    // 1) Read Hugo-emitted pool (articles with hero_image frontmatter)
+    let pool = [];
+    try {
+      const raw = document.getElementById('bolgheriHeroPool');
+      if (raw && raw.textContent.trim()) pool = JSON.parse(raw.textContent) || [];
+    } catch(e) { pool = []; }
+
+    // 2) Fallback: minimal curated editorial pool (used until Nano Banana populates hero_image frontmatter)
+    const fallback = [
+      {url:'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=1600&q=85&auto=format&fit=crop', title:'At dawn, Tokyo takes its coffee slowly.',     link:'', section:'Editorial', date:''},
+      {url:'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1600&q=85&auto=format&fit=crop', title:'A quieter shore, before the news arrives.',      link:'', section:'Editorial', date:''},
+      {url:'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1600&q=85&auto=format&fit=crop', title:'The long view, held in a morning silence.',      link:'', section:'Editorial', date:''},
+      {url:'https://images.unsplash.com/photo-1511497584788-876760111969?w=1600&q=85&auto=format&fit=crop', title:'Fog, forest, and the day\u2019s first dispatch.', link:'', section:'Editorial', date:''},
+      {url:'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=1600&q=85&auto=format&fit=crop', title:'A writing desk, set for Monday.',                link:'', section:'Editorial', date:''}
+    ];
+    if (!Array.isArray(pool) || pool.length === 0) pool = fallback;
+
+    // 3) Pick one at random per page load
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+
+    // 4) Preload so we can swap in cleanly (no partial paint)
+    const img = new Image();
+    img.onload = function(){
+      hero.style.backgroundImage =
+        "linear-gradient(135deg,rgba(93,66,50,.12),rgba(193,127,94,.08)), url('" + pick.url + "')";
+      hero.classList.add('is-loaded');
+    };
+    img.onerror = function(){ /* keep gradient background */ };
+    img.src = pick.url;
+
+    // 5) Click-through to source article (only if link exists)
+    if (pick.link) {
+      hero.setAttribute('href', pick.link);
+    } else {
+      hero.removeAttribute('href');
+      hero.style.cursor = 'default';
+    }
+
+    // 6) Update caption
+    const sec = (pick.section || 'Dispatch').toUpperCase();
+    const ttl = (pick.title || '').replace(/\s+/g, ' ').trim();
+    cap.innerHTML = sec + ' <em>·</em> ' + (ttl.length > 78 ? ttl.slice(0,75) + '\u2026' : ttl);
+  })();
+</script>
+
+{{- partial "google_analytics.html" . -}}
+</body>
+</html>
