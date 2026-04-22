@@ -4,3 +4,18 @@ resources/
 .DS_Store
 scripts/get_gmail_token.py
 scripts/setup_secrets.py
+
+# Secrets (absolutely do not commit)
+.env
+.env.*
+!.env.example
+
+# v1.1 SPEC Section 8.1: hero image generation logs (ローカル/CI で生成、コミット不要)
+logs/
+
+# プレビュー生成先 (SPEC v1.1 の 2段階プロンプト動作確認用、本番は static/images/)
+_preview_hero_v1.1_*/
+_preview_hero_*/
+
+# Python cache
+scripts/__pycache__/
