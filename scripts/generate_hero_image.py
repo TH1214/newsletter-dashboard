@@ -43,7 +43,11 @@ import urllib.error
 from typing import Optional, Tuple
 
 
+# v1.3: gemini-2.5-flash-image が GS 級 illustration 出力で安定 (Test C 検証済)。
+# gemini-3.1-flash-image-preview (Nano Banana 2) は preview で黒画像バグ確認のため
+# OPT-IN とする (GEMINI_MODEL=gemini-3.1-flash-image-preview で上書き時のみ使用)。
 DEFAULT_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash-image")
+FALLBACK_IMAGE_MODEL = os.environ.get("GEMINI_FALLBACK_IMAGE_MODEL", "gemini-2.5-flash-image")
 DEFAULT_TEXT_MODEL = os.environ.get("GEMINI_TEXT_MODEL", "gemini-2.5-flash")
 DEFAULT_ENDPOINT = os.environ.get(
     "GEMINI_ENDPOINT", "https://generativelanguage.googleapis.com/v1beta"
@@ -129,51 +133,72 @@ STYLE_DICTIONARY = {
 }
 
 
-# ---------- セクション別スタイル (Monocle / Kinfolk / Cereal 編集写真調) ----------
+# v1.3: セクション別スタイル — Pattern A (知的風刺) / Pattern B (洗練ライフスタイル) 2 分類
+#   Pattern A: WSJ / NYT-BN / NYT-OP / Buysiders / Short-Squeez / Economist
+#   Pattern B: Skift / Business-Insider
+# 全エントリ illustration 指向 (COMMON_STYLE が photorealistic を禁止しているため合致)
 SECTION_STYLES = {
+    # ---- Pattern A: 知的風刺 (editorial illustration) ----
     "wsj": (
-        "Wall Street financial district at pre-dawn, glass skyscrapers reflecting soft golden light, "
-        "reflective surfaces, quiet power, understated editorial photography"
+        "traditional editorial illustration of a Wall Street financial metaphor "
+        "(stock ticker, skyline, currency), subtle crosshatching texture, "
+        "muted earth tones with navy accents, "
+        "reminiscent of WSJ opinion-page illustration"
     ),
     "nyt-bn": (
-        "urban photojournalism documentary, street level scene, overcast sky, candid newsroom energy, "
-        "muted tones, grainy 35mm film aesthetic"
+        "modern editorial illustration of a breaking-news visual metaphor, "
+        "bold composition with one accent color against muted palette, "
+        "clean lines and decisive shapes, "
+        "reminiscent of NYT front-page conceptual art"
     ),
     "nyt-op": (
-        "contemplative editorial still life, sunlit interior with soft natural window light, "
-        "books and ceramic coffee cup on wooden desk, thoughtful literary mood"
+        "bold satirical editorial illustration, daring conceptual metaphor, "
+        "high-contrast color blocks, wry visual wit, "
+        "reminiscent of NYT Op-Ed section"
     ),
     "buysiders": (
-        "executive corner office boardroom, distant glass skyline, mahogany surfaces, "
-        "M&A negotiation mood, low-key corporate editorial, dusk light"
+        "financial editorial illustration of M&A or capital-markets metaphor "
+        "(handshake, merging shapes, chess pieces, boardroom), "
+        "navy and gold palette, sophisticated minimalism"
     ),
     "short-squeez": (
-        "trading floor late at night, glowing Bloomberg terminals, financial intensity, "
-        "amber and cyan neon reflections, cinematic low angle"
-    ),
-    "skift": (
-        "travel editorial photograph, empty luxury hotel lobby or international airport terminal "
-        "in golden hour, architectural symmetry, destination wanderlust"
-    ),
-    "business-insider": (
-        "modern business architecture, clean tech workspace, minimal lines, "
-        "sharp directional daylight, contemporary editorial"
+        "playful editorial illustration of a Wall Street scene, "
+        "witty and slightly irreverent tone, vector-style with texture accents, "
+        "tinted cream or pale navy background"
     ),
     "economist": (
-        "abstract conceptual editorial photography, economic theme, geometric composition, "
-        "thoughtful quiet tone, muted documentary palette"
+        "abstract conceptual editorial illustration of an economic theme, "
+        "geometric composition, muted editorial palette"
+    ),
+    # ---- Pattern B: 洗練ライフスタイル (modern flat digital illustration) ----
+    "skift": (
+        "modern flat digital illustration of a travel or hospitality scene, "
+        "soft gradients, textured brush strokes, serene and aspirational atmosphere, "
+        "sunlight, positive energy"
+    ),
+    "business-insider": (
+        "modern flat digital illustration of a contemporary urban or business scene, "
+        "textured brush strokes, subtle gradients, clean composition, "
+        "contemporary positive energy"
     ),
 }
 
-DEFAULT_STYLE = "editorial magazine photography, cinematic lighting, documentary aesthetic"
+# v1.3: 写真調 → illustration 指向に全面書換 (§8.2 で特定された legacy fallback NG を解消)
+DEFAULT_STYLE = (
+    "editorial illustration, conceptual metaphor, hand-drawn aesthetic, muted palette"
+)
 
-# 全セクション共通のスタイル指示
+# 全セクション共通のスタイル指示 — illustration 強制 (ポジ/ネガ両指定)
 COMMON_STYLE = (
-    "Editorial magazine hero photograph, Monocle Kinfolk Cereal magazine aesthetic. "
-    "Photorealistic, cinematic lighting, shallow depth of field, "
-    "muted earthy color palette with terracotta cream walnut tones, "
-    "composition leaves central negative space for text overlay, "
-    "no text, no letters, no logos, no visible faces, no watermarks, no signage."
+    "Editorial illustration hero image in the style of The New Yorker / The Economist / "
+    "WSJ Op-Ed cover art. Hand-drawn or vector illustration with textured brush strokes, "
+    "bold conceptual metaphor, muted editorial palette "
+    "(terracotta / cream / walnut / deep navy / charcoal / soft gold accents). "
+    "Composition leaves central negative space for text overlay. "
+    "STRICT CONSTRAINTS: illustration ONLY (NOT photorealistic, NOT a photograph, "
+    "NOT a 3D render, NOT CGI), hand-drawn aesthetic, "
+    "no text, no letters, no words, no logos, no visible human faces, "
+    "no watermarks, no signage, no UI elements, no charts with labels."
 )
 
 
@@ -230,27 +255,38 @@ class GeminiImageGenerationError(Exception):
     """Gemini image API の呼出失敗を表す。"""
 
 
-# SPEC v1.1 Section 3.3: System Prompt。文言変更禁止。
+# SPEC v1.1 Section 3.3 (v1.3 更新): System Prompt
+# v1.3 変更: JSON スキーマを末尾に明示列挙し、"STEP N -" プレフィックスが
+#           field 名に混入するのを防止 (2026-04-23 検証で "step_1_core_theme" 等が
+#           返されたインシデント対策)
 VISUAL_CONCEPT_SYSTEM_PROMPT = """You are a visual concept director for a financial/business newsletter dashboard.
-Given an article summary, extract the following in 3 strict steps:
+Given an article summary, think through the following in 3 steps, then output ONLY the JSON object specified at the bottom.
 
-STEP 1 - Core Theme: Identify ONE central topic keyword.
-STEP 2 - Visual Metaphor: Choose ONE concrete object or action that symbolizes the theme.
-  - For abstract concepts (inflation, recession, negotiation), use physical metaphors
-    (a heavy weight, a stalled engine, a chessboard).
-  - For lifestyle/travel/tech, use scene-based imagery (a cyclist on a ridge,
-    a traveler with luggage, a modern workspace).
-STEP 3 - Contextual Detail: Add ONE specific element from the article
-  (location, industry, character attribute).
+THINKING STEPS (internal — do NOT include in output):
+1. Core Theme: Identify ONE central topic keyword.
+2. Visual Metaphor: Choose ONE concrete object or action that symbolizes the theme.
+   - For abstract concepts (inflation, recession, negotiation), use physical metaphors
+     (a heavy weight, a stalled engine, a chessboard).
+   - For lifestyle/travel/tech, use scene-based imagery (a cyclist on a ridge,
+     a traveler with luggage, a modern workspace).
+3. Contextual Detail: Add ONE specific element from the article
+   (location, industry, character attribute).
+4. Primary Subject Noun: the single most important physically drawable object
+   that MUST appear as the visual anchor.
 
-Also extract the PRIMARY SUBJECT NOUN — the single most important object
-that MUST appear as the visual anchor.
-
-Rules:
+RULES:
 - Never return abstract concepts as primary_subject_noun. Always a physical,
   drawable object (e.g., "a cyclist", "a skyscraper", "a golden coin", NOT "growth" or "risk").
-- All fields in English.
-- Output ONLY valid JSON, no preamble, no markdown fences."""
+- All field values must be in English.
+- Output ONLY valid JSON, no preamble, no markdown fences, no code blocks.
+
+REQUIRED OUTPUT SCHEMA (use EXACTLY these field names — no prefixes like "step_1_"):
+{
+  "core_theme": "<one-keyword central topic>",
+  "visual_metaphor": "<concrete object or action phrase>",
+  "contextual_detail": "<one specific element from the article>",
+  "primary_subject_noun": "<the single most important drawable object>"
+}"""
 
 
 def _call_gemini_text(user_message: str, system_instruction: str, api_key: str,
@@ -274,8 +310,12 @@ def _call_gemini_text(user_message: str, system_instruction: str, api_key: str,
         },
         "generationConfig": {
             "temperature": 0,
-            "maxOutputTokens": 300,
+            # v1.3: 300 では thinking mode (thoughtsTokenCount≈285) で枯渇するため 1024 に増量
+            "maxOutputTokens": 1024,
             "responseMimeType": "application/json",
+            # v1.3: thinking mode を完全にオフにして出力 token 枠を確保
+            # (2026-04-22 検証で finishReason=MAX_TOKENS / thoughtTokens=285 を確認)
+            "thinkingConfig": {"thinkingBudget": 0},
         },
     }
     body = json.dumps(payload).encode("utf-8")
@@ -345,11 +385,47 @@ def _parse_concept_json(raw_text: str) -> dict:
     """
     Gemini の返す JSON 文字列を dict に変換し、必須フィールドを検証。
     JSON パース失敗 / 必須キー欠落で GeminiTextExtractionError を raise。
+
+    v1.3: Gemini がしばしば以下のような prefix / code fence を付加するため堅牢化:
+      1. "Here is the JSON requested:\n```json\n{...}\n```"
+      2. "```json\n{...}\n```"
+      3. "```\n{...}\n```"
+    対策: (a) 先頭の非 JSON prefix を削除 → (b) markdown fence を剥ぐ
+         → (c) それでも失敗したら最初の {...} ブロックを正規表現で抽出
     """
+    text = raw_text.strip()
+    # (a) markdown code fence を剥ぐ
+    text = re.sub(r"^```(?:json|JSON)?\s*\n?", "", text)
+    text = re.sub(r"\n?\s*```\s*$", "", text)
+    text = text.strip()
+    # (b) 冒頭に "Here is the JSON:" 等の prefix がある場合、最初の { から抽出
+    if not text.startswith("{"):
+        m = re.search(r"\{[\s\S]*\}", text)
+        if m:
+            text = m.group(0)
     try:
-        obj = json.loads(raw_text)
+        obj = json.loads(text)
     except json.JSONDecodeError as e:
         raise GeminiTextExtractionError(f"JSON parse failed: {e}; raw={raw_text[:300]}")
+
+    # v1.3: Gemini が "step_1_core_theme" のような prefixed field を返すケースに対応
+    # (system prompt の "STEP 1 -" を文字通り field 名に反映してしまう現象)
+    if isinstance(obj, dict):
+        normalized = {}
+        for k, v in obj.items():
+            if not isinstance(k, str):
+                continue
+            # step_1_, step_2_, step_3_, step_N_ のプレフィックスを剥ぐ
+            nk = re.sub(r"^step_\d+_", "", k.strip().lower())
+            # camelCase → snake_case 的に軽く正規化 (coreTheme → core_theme)
+            nk = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", nk).lower()
+            if nk not in normalized:
+                normalized[nk] = v
+        # 元キーも残す (defensive: _parse_concept_json の既存バリデーションで使用)
+        for orig_k in list(obj.keys()):
+            if isinstance(orig_k, str) and orig_k not in normalized:
+                normalized.setdefault(orig_k, obj[orig_k])
+        obj = normalized
 
     if not isinstance(obj, dict):
         raise GeminiTextExtractionError(
@@ -408,8 +484,11 @@ def _needs_retry(concept: dict) -> tuple:
     if hit:
         return True, f"abstract_word={sorted(hit)}"
 
-    # (2) 冠詞を除いて 2 語以下 (SPEC 文言通り実装)
-    if len(words) <= 2:
+    # v1.3: SPEC v1.1 §7.2 の "2 語以下で retry" は
+    #       SPEC §7.3 の GOOD 例 ("a cyclist", "a suitcase" = 1 語) と矛盾。
+    #       冠詞を除いて 1 語 (concrete single-noun) は十分 drawable なので
+    #       "0 語 (空文字)" のみを再試行対象とする。
+    if len(words) < 1:
         return True, f"too_short={len(words)}_words"
 
     return False, ""
@@ -525,11 +604,15 @@ def call_gemini_image(prompt: str, api_key: str,
                       model: str = DEFAULT_MODEL,
                       endpoint: str = DEFAULT_ENDPOINT,
                       timeout: int = DEFAULT_TIMEOUT,
-                      retries: int = DEFAULT_RETRIES) -> bytes:
+                      retries: int = DEFAULT_RETRIES,
+                      _fallback_attempted: bool = False) -> bytes:
     """
-    Gemini 2.5 Flash Image に POST し、PNG バイト列を返す。
+    Gemini Image API に POST し、PNG バイト列を返す。
     HTTP 429 は exponential backoff で最大 retries 回リトライ。
     その他のエラーは即 raise。
+
+    v1.3: DEFAULT_MODEL (Nano Banana 2 preview) が HTTP 404 (モデル無効) を返したら
+          FALLBACK_IMAGE_MODEL (gemini-2.5-flash-image) に 1 度だけ自動切替して再試行。
     """
     url = f"{endpoint.rstrip('/')}/models/{model}:generateContent?key={api_key}"
     # SPEC v1.1 Section 6.2: imageConfig.aspectRatio で 16:9 を API 側から強制。
@@ -579,6 +662,21 @@ def call_gemini_image(prompt: str, api_key: str,
             except Exception:
                 pass
             last_error = f"HTTP {e.code}: {e.reason}; body={err_body}"
+            # v1.3: 404 (model not found) のみ、FALLBACK_IMAGE_MODEL に 1 度だけ自動切替
+            if e.code == 404 and not _fallback_attempted and model != FALLBACK_IMAGE_MODEL:
+                print(
+                    f"[gemini] ⚠ model '{model}' returned 404; "
+                    f"falling back to '{FALLBACK_IMAGE_MODEL}'",
+                    file=sys.stderr,
+                )
+                return call_gemini_image(
+                    prompt, api_key,
+                    model=FALLBACK_IMAGE_MODEL,
+                    endpoint=endpoint,
+                    timeout=timeout,
+                    retries=retries,
+                    _fallback_attempted=True,
+                )
             if e.code == 429 and attempt < retries:
                 wait = BACKOFF_DELAYS[min(attempt, len(BACKOFF_DELAYS) - 1)]
                 print(f"[gemini] 429 rate limit, attempt {attempt + 1}/{retries + 1}. "
@@ -675,38 +773,87 @@ ASPECT_RATIO_TOLERANCE = 0.05
 TARGET_ASPECT_RATIO = 16.0 / 9.0
 
 
+def detect_image_dimensions(img_bytes: bytes) -> tuple:
+    """
+    画像ヘッダから (width, height, format) を返す。対応: PNG / JPEG / WebP。
+    v1.3: Nano Banana 2 が PNG 以外 (JPEG / WebP) を返すケースに対応。
+    未対応 / 破損の場合は (0, 0, "unknown") を返す。stdlib のみ依存。
+    """
+    if len(img_bytes) < 24:
+        return (0, 0, "too_short")
+    # ---- PNG: signature \x89PNG\r\n\x1a\n + IHDR ----
+    if img_bytes[:8] == b"\x89PNG\r\n\x1a\n" and img_bytes[12:16] == b"IHDR":
+        try:
+            width, height = struct.unpack(">II", img_bytes[16:24])
+            return (width, height, "png")
+        except struct.error:
+            return (0, 0, "png_corrupt")
+    # ---- JPEG: SOI (FF D8 FF) ... SOFn marker で dimensions 取得 ----
+    if img_bytes[:3] == b"\xff\xd8\xff":
+        i = 2
+        while i + 9 < len(img_bytes):
+            if img_bytes[i] != 0xFF:
+                i += 1
+                continue
+            # marker
+            marker = img_bytes[i + 1]
+            # Skip padding 0xFF bytes
+            while marker == 0xFF and i + 1 < len(img_bytes):
+                i += 1
+                marker = img_bytes[i + 1]
+            # SOFn markers: C0-C3, C5-C7, C9-CB, CD-CF (frame start)
+            if marker in (0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF):
+                try:
+                    height, width = struct.unpack(">HH", img_bytes[i + 5:i + 9])
+                    return (width, height, "jpeg")
+                except struct.error:
+                    return (0, 0, "jpeg_corrupt")
+            # Skip this segment: length is next 2 bytes (big-endian), includes the length bytes themselves
+            try:
+                seg_len = struct.unpack(">H", img_bytes[i + 2:i + 4])[0]
+                i += 2 + seg_len
+            except struct.error:
+                return (0, 0, "jpeg_corrupt")
+        return (0, 0, "jpeg_no_sof")
+    # ---- WebP: "RIFF....WEBP" + VP8/VP8L/VP8X chunk ----
+    if img_bytes[:4] == b"RIFF" and img_bytes[8:12] == b"WEBP":
+        chunk = img_bytes[12:16]
+        try:
+            if chunk == b"VP8 ":
+                # lossy: after "VP8 " (4) + chunk size (4) + 3 bytes frame tag = offset 23
+                width, height = struct.unpack("<HH", img_bytes[26:30])
+                return (width & 0x3FFF, height & 0x3FFF, "webp")
+            elif chunk == b"VP8L":
+                # lossless: bitstream starts at offset 20, signature 0x2F + 4 bytes dim packed
+                b = img_bytes[21:25]
+                width = ((b[1] & 0x3F) << 8) | b[0]
+                height = ((b[3] & 0x0F) << 10) | (b[2] << 2) | ((b[1] & 0xC0) >> 6)
+                return (width + 1, height + 1, "webp")
+            elif chunk == b"VP8X":
+                # extended: width/height are 24-bit little-endian at offset 24/27
+                width = img_bytes[24] | (img_bytes[25] << 8) | (img_bytes[26] << 16)
+                height = img_bytes[27] | (img_bytes[28] << 8) | (img_bytes[29] << 16)
+                return (width + 1, height + 1, "webp")
+        except (struct.error, IndexError):
+            return (0, 0, "webp_corrupt")
+    return (0, 0, "unknown")
+
+
+# v1.3: 後方互換のため旧関数名も残す
 def detect_png_dimensions(png_bytes: bytes) -> tuple:
-    """
-    PNG ヘッダ (IHDR chunk) から (width, height) を返す。
-    PNG 形式でない / 破損していたら (0, 0) を返す。
-    stdlib のみ依存 (Pillow 不使用)。
-    """
-    if len(png_bytes) < 24:
-        return (0, 0)
-    # PNG signature: 8 bytes '\x89PNG\r\n\x1a\n'
-    if png_bytes[:8] != b"\x89PNG\r\n\x1a\n":
-        return (0, 0)
-    # IHDR chunk starts at byte 8: [4 len][4 "IHDR"][4 width][4 height]...
-    if png_bytes[12:16] != b"IHDR":
-        return (0, 0)
-    try:
-        width, height = struct.unpack(">II", png_bytes[16:24])
-    except struct.error:
-        return (0, 0)
-    return (width, height)
+    """Deprecated: use detect_image_dimensions. Returns (width, height) only."""
+    w, h, _ = detect_image_dimensions(png_bytes)
+    return (w, h)
 
 
 def warn_if_not_16x9(png_bytes: bytes, label: str) -> None:
     """
-    PNG の実寸を検出し、16:9 ±5% から外れていれば stderr に warning を出す。
-    クロップは行わない (SPEC Section 6.2 の Pillow fallback は未実装)。
-
-    TODO (将来): Pillow を導入した場合は 1920x1080 へのクロップを追加できる。
-      from PIL import Image; im.crop(...); im.resize((1920, 1080))
+    画像の実寸を検出し、16:9 ±5% から外れていれば stderr に warning を出す。
+    v1.3: PNG / JPEG / WebP に対応 (Nano Banana 2 は PNG 以外を返すことがある)。
     """
-    width, height = detect_png_dimensions(png_bytes)
+    width, height, fmt = detect_image_dimensions(png_bytes)
     if width == 0 or height == 0:
-        print(f"[hero] ⚠ {label}: could not detect PNG dimensions", file=sys.stderr)
+        print(f"[hero] ⚠ {label}: could not detect image dimensions (format={fmt})", file=sys.stderr)
         return
 
     actual_ratio = width / height
@@ -716,12 +863,12 @@ def warn_if_not_16x9(png_bytes: bytes, label: str) -> None:
             f"[hero] ⚠ {label}: aspect ratio off-target "
             f"(got {width}x{height} = {actual_ratio:.3f}, "
             f"expected 16:9 = {TARGET_ASPECT_RATIO:.3f}, "
-            f"deviation={deviation*100:.1f}%)",
+            f"deviation={deviation*100:.1f}%, format={fmt})",
             file=sys.stderr,
         )
     else:
         print(
-            f"[hero] ✓ {label}: {width}x{height} (aspect OK, deviation={deviation*100:.1f}%)",
+            f"[hero] ✓ {label}: {width}x{height} (aspect OK, deviation={deviation*100:.1f}%, format={fmt})",
             file=sys.stderr,
         )
 
