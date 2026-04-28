@@ -128,21 +128,31 @@ def decode_body(payload):
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python fetch_gmail.py <source>", file=sys.stderr)
+        print("Usage: python fetch_gmail.py <source> [YYYY-MM-DD]", file=sys.stderr)
         sys.exit(1)
 
     source = sys.argv[1]
+    date_override = sys.argv[2] if len(sys.argv) >= 3 else None
+
     if source not in SOURCES:
         print(f"Unknown source: {source}. Available: {', '.join(SOURCES.keys())}", file=sys.stderr)
         sys.exit(1)
 
     config = SOURCES[source]
 
-    # 過去24時間のメールを検索
     jst = timezone(timedelta(hours=9))
-    now = datetime.now(jst)
-    after_epoch = int((now - timedelta(hours=36)).timestamp())
-    query = f'{config["query"]} after:{after_epoch}'
+
+    if date_override:
+        # 指定日の JST 00:00〜翌日 03:00 (深夜配信を含む) を検索
+        target = datetime.strptime(date_override, "%Y-%m-%d").replace(tzinfo=jst)
+        after_epoch = int(target.timestamp())
+        before_epoch = int((target + timedelta(hours=27)).timestamp())
+        query = f'{config["query"]} after:{after_epoch} before:{before_epoch}'
+    else:
+        # デフォルト: 過去36時間
+        now = datetime.now(jst)
+        after_epoch = int((now - timedelta(hours=36)).timestamp())
+        query = f'{config["query"]} after:{after_epoch}'
 
     print(f"[fetch] Searching: {query}", file=sys.stderr)
 

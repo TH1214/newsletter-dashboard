@@ -11,6 +11,11 @@ on:
         required: false
         default: 'all'
         type: string
+      date_override:
+        description: 'Date override (YYYY-MM-DD). Leave empty for today.'
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: write
@@ -45,7 +50,13 @@ jobs:
           GITHUB_MODELS_ENDPOINT: https://models.github.ai/inference
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          TODAY=$(date +%Y-%m-%d)
+          INPUT_DATE="${{ github.event.inputs.date_override }}"
+          if [ -n "$INPUT_DATE" ]; then
+            TODAY="$INPUT_DATE"
+          else
+            TODAY=$(date +%Y-%m-%d)
+          fi
+          echo "📅 Processing date: $TODAY"
           ALL_SOURCES="wsj nyt-bn short-squeez skift buysiders nyt-op business-insider"
 
           INPUT="${{ github.event.inputs.sources }}"
@@ -63,7 +74,9 @@ jobs:
             echo "::group::📧 Processing $SOURCE"
 
             # ── メール取得 ──
-            if ! python scripts/fetch_gmail.py "$SOURCE" > "/tmp/email_${SOURCE}.txt" 2>/tmp/fetch_log.txt; then
+            FETCH_ARGS="$SOURCE"
+            [ -n "$INPUT_DATE" ] && FETCH_ARGS="$SOURCE $TODAY"
+            if ! python scripts/fetch_gmail.py $FETCH_ARGS > "/tmp/email_${SOURCE}.txt" 2>/tmp/fetch_log.txt; then
               echo "❌ Fetch failed for $SOURCE"
               cat /tmp/fetch_log.txt
               FAILED=$((FAILED + 1))
