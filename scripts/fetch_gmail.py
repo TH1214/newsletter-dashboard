@@ -31,15 +31,15 @@ SOURCES = {
         "label": "NYT Breaking News",
     },
     "short-squeez": {
-        "query": 'from:shortsqueez.com "Overheard on Wall Street"',
+        "query": 'from:shortsqueez.co "Overheard on Wall Street"',
         "label": "Short Squeez OWS",
     },
     "skift": {
-        "query": 'from:skift.com subject:"Skift Daily"',
+        "query": 'from:email.skift.com',
         "label": "Skift The Daily",
     },
     "buysiders": {
-        "query": 'from:buysiders.com',
+        "query": 'from:buysiders.co',
         "label": "Buysiders Deal Report",
     },
     "nyt-op": {
