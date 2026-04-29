@@ -1,0 +1,168 @@
+{{- /* Skift The Daily — Section Cover Page */ -}}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Skift The Daily — Bolgheri</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400;1,9..144,500;1,9..144,700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#071414;
+    --bg-mid:#0D2222;
+    --teal:#00A896;
+    --teal-pale:#2DD4BF;
+    --paper:#F2F8F8;
+    --paper-alt:#E4F0EF;
+    --ink:#071414;
+    --rule:#C0D8D6;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{background:var(--paper);color:var(--ink);font-family:'Space Grotesk',sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+
+  .topbar{display:flex;justify-content:space-between;align-items:center;padding:18px 56px;background:var(--bg);border-bottom:3px solid var(--teal);font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:rgba(255,255,255,.75);font-weight:500}
+  .topbar a:hover{color:var(--teal-pale)}
+  .topbar .logo{font-family:'Fraunces',serif;font-style:italic;font-size:18px;letter-spacing:.01em;text-transform:none;color:#fff;font-weight:500}
+
+  .cover{position:relative;height:88vh;min-height:640px;overflow:hidden;background:var(--bg)}
+  .cover-photo{position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,20,20,.08) 0%,rgba(7,20,20,.38) 50%,rgba(7,20,20,.88) 100%),var(--hero-img,url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=1800&q=85')) center/cover no-repeat;filter:saturate(.85) brightness(.9)}
+  .cover-wave{position:absolute;bottom:-2%;left:-5%;right:-5%;height:60%;background:linear-gradient(180deg,transparent 0%,rgba(0,168,150,.04) 100%);border-radius:50% 50% 0 0;pointer-events:none}
+  .cover-inner{position:relative;z-index:2;height:100%;padding:48px 56px 64px;display:flex;flex-direction:column;justify-content:space-between;max-width:1320px;margin:0 auto}
+  .cover-top{display:flex;justify-content:space-between;align-items:flex-start;color:var(--paper)}
+  .S-mark{width:56px;height:56px;border:2px solid var(--teal);display:flex;align-items:center;justify-content:center;font-family:'Archivo Black',sans-serif;font-size:22px;color:var(--teal);font-weight:900;letter-spacing:.05em}
+  .cover-top .right{text-align:right;font-size:10.5px;letter-spacing:.3em;line-height:1.9;color:rgba(255,255,255,.6);font-weight:500;text-transform:uppercase}
+  .cover-top .right strong{color:var(--paper);font-weight:600}
+
+  .mega-title{font-family:'Archivo Black',sans-serif;font-size:clamp(56px,8vw,128px);line-height:.92;letter-spacing:-.035em;color:var(--paper);text-transform:uppercase}
+  .mega-title em{font-family:'Fraunces',serif;font-style:italic;text-transform:none;color:var(--teal-pale);font-weight:500;letter-spacing:-.02em;display:block;margin-top:8px}
+  .cover-cta{display:inline-flex;align-items:center;gap:14px;margin-top:28px;padding:14px 28px;background:var(--teal);color:#fff;font-size:12px;font-weight:700;letter-spacing:.26em;text-transform:uppercase;transition:all .2s;border:2px solid var(--teal)}
+  .cover-cta:hover{background:transparent;color:var(--teal-pale)}
+  .cover-cta::after{content:"→"}
+
+  .cover-foot{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;padding-top:22px;border-top:1px solid rgba(255,255,255,.2);color:var(--paper)}
+  .cfi{font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:rgba(255,255,255,.5);font-weight:500}
+  .cfi b{display:block;color:var(--paper);font-size:18px;font-weight:700;margin-top:6px;letter-spacing:.03em;text-transform:none;font-family:'Space Grotesk',sans-serif}
+
+  .teal-edge{position:absolute;top:0;right:0;width:6px;height:100%;background:var(--teal);z-index:3}
+
+  .lead{padding:90px 56px;max-width:1100px;margin:0 auto}
+  .lead .kicker{font-size:11px;font-weight:600;letter-spacing:.3em;text-transform:uppercase;color:var(--teal);margin-bottom:22px;display:inline-flex;align-items:center;gap:14px}
+  .lead .kicker::before,.lead .kicker::after{content:"";width:32px;height:1.5px;background:var(--teal)}
+  .lead p{font-family:'Fraunces',serif;font-weight:400;font-size:26px;line-height:1.5;color:var(--ink);letter-spacing:-.005em}
+
+  .archive{padding:80px 56px 100px;background:var(--paper-alt);border-top:1px solid var(--rule)}
+  .arch-inner{max-width:1200px;margin:0 auto}
+  .arch-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:48px;padding-bottom:18px;border-bottom:2px solid var(--bg)}
+  .arch-head h2{font-family:'Archivo Black',sans-serif;font-size:clamp(36px,4.2vw,60px);line-height:.95;letter-spacing:-.025em;text-transform:uppercase;color:var(--bg)}
+  .arch-head h2 em{font-family:'Fraunces',serif;font-style:italic;text-transform:none;color:var(--teal);font-weight:500}
+  .arch-head .meta{font-size:10.5px;letter-spacing:.3em;text-transform:uppercase;color:var(--bg-mid);font-weight:600;text-align:right;line-height:1.7}
+
+  .arch-list{display:flex;flex-direction:column}
+  .arch-row{display:grid;grid-template-columns:80px 1fr 140px;gap:28px;padding:22px 0;border-top:1px solid var(--rule);align-items:baseline;transition:background .2s}
+  .arch-row:first-child{border-top:none}
+  .arch-row:hover{background:rgba(0,168,150,.06)}
+  .arch-row .n{font-family:'Fraunces',serif;font-style:italic;font-weight:500;color:var(--teal);font-size:24px}
+  .arch-row h3{font-weight:600;font-size:21px;line-height:1.3;color:var(--ink);letter-spacing:-.01em}
+  .arch-row .summary{display:block;font-size:13px;line-height:1.55;color:#444;margin-top:6px;font-weight:400}
+  .arch-row .date{text-align:right;font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:#555;font-weight:600}
+  .arch-row .date b{display:block;color:var(--ink);font-family:'Fraunces',serif;font-style:italic;font-size:20px;font-weight:500;letter-spacing:0;text-transform:none;margin-bottom:4px}
+  .arch-empty{padding:80px 0;text-align:center;font-family:'Fraunces',serif;font-style:italic;font-size:22px;color:#888}
+
+  .close{padding:60px 56px;background:var(--bg);text-align:center;color:var(--paper)}
+  .close .line{font-family:'Fraunces',serif;font-style:italic;font-size:24px;margin-bottom:24px;line-height:1.35;color:var(--teal-pale)}
+  .close .line::before,.close .line::after{content:"—";color:rgba(255,255,255,.4);margin:0 18px}
+  .back{display:inline-block;padding:15px 32px;background:transparent;color:var(--paper);font-size:11.5px;letter-spacing:.28em;text-transform:uppercase;font-weight:600;transition:all .25s;border:2px solid var(--paper)}
+  .back:hover{background:var(--paper);color:var(--bg)}
+  .footer{display:flex;justify-content:space-between;padding:22px 56px;background:#040E0E;color:rgba(255,255,255,.45);font-size:10px;letter-spacing:.24em;text-transform:uppercase;font-weight:500}
+
+  @media(max-width:1000px){.cover-foot{grid-template-columns:repeat(2,1fr)}.mega-title{font-size:54px}.lead p{font-size:20px}.arch-row{grid-template-columns:50px 1fr;gap:16px}.arch-row .date{grid-column:2}}
+  @media(max-width:680px){.topbar{padding:14px 20px;font-size:10px;flex-wrap:wrap;gap:6px}.cover-inner{padding:32px 22px 40px;gap:32px}.cover-top{flex-direction:column;gap:16px}.mega-title{font-size:40px}.cover-cta{margin-top:18px;padding:11px 20px;font-size:10.5px}.cover-foot{grid-template-columns:1fr 1fr;gap:12px;padding-top:16px}.lead{padding:50px 22px}.lead p{font-size:17px}.archive{padding:50px 22px 70px}.arch-head{flex-direction:column;gap:12px}.arch-head h2{font-size:32px}.arch-row{grid-template-columns:38px 1fr;gap:10px;padding:16px 0}.arch-row .n{font-size:18px}.arch-row h3{font-size:16px}.arch-row .summary{font-size:12px}.arch-row .date{text-align:left;font-size:9.5px}.arch-row .date b{font-size:15px}.close{padding:44px 22px}.close .line{font-size:18px}.footer{flex-direction:column;gap:6px;padding:16px 22px;text-align:center}}
+</style>
+</head>
+<body>
+
+<nav class="topbar">
+  <a href="{{ "/" | relURL }}">← Bolgheri Daily Brief</a>
+  <span class="logo">Skift · The Daily</span>
+  <span>{{ now.Format "Monday · 02 January 2006" }}</span>
+</nav>
+
+{{- $latest := where site.RegularPages "Section" "skift" | first 1 }}
+{{- $latestPost := "" }}
+{{- with index $latest 0 }}{{ $latestPost = . }}{{ end }}
+{{- $heroUrl := "" -}}
+{{- with $latestPost }}{{ $heroUrl = .Params.hero_image | default "" }}{{ end -}}
+
+<section class="cover"{{ with $heroUrl }} style="--hero-img:url('{{ . | relURL }}')"{{ end }}>
+  <div class="cover-photo"></div>
+  <div class="cover-wave"></div>
+  <span class="teal-edge"></span>
+  <div class="cover-inner">
+    <div class="cover-top">
+      <span class="S-mark">SK</span>
+      <div class="right">Travel &amp;<br><strong>Hospitality</strong><br>skift.com</div>
+    </div>
+    <div>
+      {{- with $latestPost }}
+        <h1 class="mega-title">{{ .Title }}</h1>
+        <a href="{{ .RelPermalink }}" class="cover-cta">Read Today's Full Brief</a>
+      {{- else }}
+        <h1 class="mega-title">Skift<br><em>The Daily.</em></h1>
+      {{- end }}
+    </div>
+    <div class="cover-foot">
+      <div class="cfi">Source<b>Skift</b></div>
+      <div class="cfi">Dispatched<b>06:00 JST</b></div>
+      <div class="cfi">Archive<b>{{ len (where site.RegularPages "Section" "skift") }} posts</b></div>
+      <div class="cfi">Focus<b>Travel</b></div>
+    </div>
+  </div>
+</section>
+
+{{- with $latestPost }}
+<section class="lead">
+  <div class="kicker">Today's Brief · {{ .Date.Format "02 Jan 2006" }}</div>
+  <p>{{ with .Params.summary }}{{ . }}{{ else }}{{ .Summary | plainify | truncate 240 }}{{ end }}</p>
+</section>
+{{- end }}
+
+<section class="archive">
+  <div class="arch-inner">
+    <div class="arch-head">
+      <h2>The <em>Archive</em></h2>
+      <div class="meta">All Briefs<br><span style="color:var(--teal);font-family:'Fraunces',serif;font-style:italic;font-size:22px;letter-spacing:0;text-transform:none">{{ len (where site.RegularPages "Section" "skift") }}</span></div>
+    </div>
+    {{- $posts := where site.RegularPages "Section" "skift" }}
+    {{- if $posts }}
+    <div class="arch-list">
+      {{- range $i, $p := $posts }}
+      <a href="{{ $p.RelPermalink }}" class="arch-row">
+        <div class="n">{{ printf "%02d" (sub (len $posts) $i) }}</div>
+        <div>
+          <h3>{{ $p.Title }}</h3>
+          {{- with $p.Params.summary }}<span class="summary">{{ . }}</span>{{ end }}
+        </div>
+        <div class="date"><b>{{ $p.Date.Format "Jan 02" }}</b>{{ $p.Date.Format "2006" }}</div>
+      </a>
+      {{- end }}
+    </div>
+    {{- else }}<div class="arch-empty">Awaiting first dispatch.</div>{{- end }}
+  </div>
+</section>
+
+<section class="close">
+  <div class="line">Travel intelligence, decoded at six.</div>
+  <a href="{{ "/" | relURL }}" class="back">Return to Today's Edition</a>
+</section>
+
+<div class="footer">
+  <span>© MMXXVI Bolgheri</span>
+  <span>Source · Skift The Daily · skift.com</span>
+</div>
+
+{{- partial "google_analytics.html" . -}}
+</body>
+</html>

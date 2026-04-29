@@ -1,0 +1,135 @@
+{{- /*
+  WSJ · Individual Article Page
+  WSJ のフォント・カラーを継承したミニマル Typography テンプレ。
+  翻訳本文 ({{ .Content }}) + 埋込画像をそのままレンダリング。
+*/ -}}
+<!DOCTYPE html>
+<html lang="{{ site.Language.LanguageCode | default "ja" }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ .Title }} — WSJ · Bolgheri</title>
+<meta name="description" content="{{ .Params.summary | default (.Summary | plainify | truncate 160) }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500;1,9..144,700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0A1E3F;
+    --navy-deep:#06142D;
+    --navy-mid:#12305E;
+    --blue:#2E5BFF;
+    --sky:#7FC0E5;
+    --paper:#F7F4EE;
+    --paper-alt:#EDE8DC;
+    --ink:#0A0F1A;
+    --rule:#CFC6B2;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{background:var(--paper);color:var(--ink);font-family:'Fraunces',Georgia,serif;line-height:1.7;-webkit-font-smoothing:antialiased;font-size:17px}
+  a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(46,91,255,.3);transition:all .2s}
+  a:hover{color:var(--navy);border-color:var(--navy)}
+
+  .topbar{display:flex;justify-content:space-between;align-items:center;padding:16px 48px;background:var(--navy);border-bottom:3px solid var(--blue);font-family:'Space Grotesk',sans-serif;font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:rgba(255,255,255,.8);font-weight:500}
+  .topbar a{color:rgba(255,255,255,.8);border:none}
+  .topbar a:hover{color:var(--sky)}
+  .topbar .logo{font-family:'Fraunces',serif;font-style:italic;font-size:16px;letter-spacing:.01em;text-transform:none;color:#fff;font-weight:500}
+
+  .hero{padding:80px 48px 64px;background:var(--paper);border-bottom:1px solid var(--rule);max-width:1080px;margin:0 auto}
+  .hero .kicker{font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:600;letter-spacing:.3em;text-transform:uppercase;color:var(--blue);margin-bottom:24px;display:inline-flex;align-items:center;gap:14px}
+  .hero .kicker::before{content:"";width:36px;height:1.5px;background:var(--blue)}
+  .hero h1{font-family:'Archivo Black',sans-serif;font-size:clamp(44px,5.8vw,84px);line-height:.97;letter-spacing:-.035em;color:var(--navy);text-transform:uppercase;margin-bottom:28px}
+  .hero h1 em{font-family:'Fraunces',serif;font-style:italic;text-transform:none;color:var(--blue);font-weight:500;letter-spacing:-.015em}
+  .hero .meta{display:flex;flex-wrap:wrap;gap:32px;padding-top:22px;border-top:1.5px solid var(--rule);font-family:'Space Grotesk',sans-serif;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--navy-mid);font-weight:500}
+  .hero .meta strong{color:var(--navy);font-weight:700}
+
+  /* ---------- ARTICLE BODY ---------- */
+  .article{max-width:760px;margin:0 auto;padding:60px 48px 80px;font-family:'Fraunces',Georgia,serif;font-size:18px;line-height:1.8;color:var(--ink)}
+
+  .article h2{font-family:'Archivo Black',sans-serif;font-size:34px;line-height:1.1;letter-spacing:-.022em;text-transform:uppercase;color:var(--navy);margin:64px 0 22px;padding-top:24px;border-top:2px solid var(--navy);position:relative}
+  .article h2::first-letter{color:var(--blue)}
+  .article h3{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;line-height:1.25;letter-spacing:-.01em;color:var(--navy);margin:44px 0 14px}
+  .article h4{font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:700;letter-spacing:.02em;color:var(--navy);margin:30px 0 10px;text-transform:uppercase}
+
+  .article p{margin:0 0 22px;color:var(--ink)}
+  .article p:first-of-type::first-letter{font-family:'Archivo Black',sans-serif;font-size:68px;line-height:.85;float:left;padding:8px 14px 0 0;color:var(--navy);text-transform:uppercase}
+
+  .article strong{color:var(--navy);font-weight:600}
+  .article em{font-style:italic;color:var(--blue)}
+
+  .article ul,.article ol{margin:18px 0 26px 28px;padding:0}
+  .article li{margin-bottom:10px}
+  .article ul li::marker{color:var(--blue);font-weight:700}
+  .article ol li::marker{color:var(--blue);font-weight:700;font-family:'Space Grotesk',sans-serif}
+
+  .article blockquote{border-left:3px solid var(--blue);padding:8px 28px;margin:28px 0;font-style:italic;color:var(--navy-mid);background:var(--paper-alt);font-size:17px;line-height:1.65}
+  .article blockquote p{margin:8px 0}
+
+  /* Embedded images (from Nano Banana etc.) */
+  .article img{width:100%;max-width:100%;height:auto;display:block;margin:36px 0;border:1px solid var(--rule);background:var(--paper-alt)}
+
+  /* Tables (for exec summary etc.) */
+  .article table{width:100%;border-collapse:collapse;margin:32px 0;font-family:'Space Grotesk',sans-serif;font-size:14px;line-height:1.55}
+  .article th{background:var(--navy);color:var(--paper);font-weight:700;padding:12px 14px;text-align:left;letter-spacing:.04em;font-size:11px;text-transform:uppercase;border-bottom:2px solid var(--blue)}
+  .article td{padding:12px 14px;border-bottom:1px solid var(--rule);vertical-align:top;color:var(--ink)}
+  .article tr:nth-child(even) td{background:rgba(46,91,255,.03)}
+
+  .article hr{border:none;border-top:1.5px solid var(--rule);margin:48px 0}
+
+  .article code{background:var(--paper-alt);padding:2px 6px;font-family:'Space Grotesk',sans-serif;font-size:14px;color:var(--navy)}
+
+  /* ---------- NAV / RELATED ---------- */
+  .nav-bottom{max-width:1080px;margin:0 auto;padding:40px 48px 20px;display:flex;justify-content:space-between;gap:20px;font-family:'Space Grotesk',sans-serif;font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--navy-mid);font-weight:600;border-top:1px solid var(--rule)}
+  .nav-bottom a{color:var(--navy);border:none;padding:14px 24px;border:1.5px solid var(--navy);transition:all .2s}
+  .nav-bottom a:hover{background:var(--navy);color:var(--paper)}
+  .nav-bottom .prev::before{content:"← "}
+  .nav-bottom .next::after{content:" →"}
+  .nav-bottom .home{margin-left:auto;margin-right:auto;color:var(--blue);border:none;padding:14px 0;letter-spacing:.3em}
+  .nav-bottom .home:hover{background:transparent;color:var(--navy)}
+
+  .footer{display:flex;justify-content:space-between;padding:22px 48px;background:var(--navy-deep);color:rgba(255,255,255,.5);font-family:'Space Grotesk',sans-serif;font-size:10px;letter-spacing:.24em;text-transform:uppercase;font-weight:500}
+
+  @media (max-width:720px){
+    .hero h1{font-size:40px}
+    .article{padding:40px 28px;font-size:17px}
+    .article h2{font-size:26px}
+    .nav-bottom{flex-direction:column;padding:32px 28px}
+  }
+</style>
+</head>
+<body>
+
+<nav class="topbar">
+  <a href="{{ "/wsj/" | relURL }}">← WSJ · The 10-Point</a>
+  <span class="logo">{{ .Date.Format "02 Jan 2006" }}</span>
+  <a href="{{ "/" | relURL }}">Bolgheri Daily Brief</a>
+</nav>
+
+<header class="hero">
+  <div class="kicker">WSJ · The 10-Point · Dispatch</div>
+  <h1>{{ .Title }}</h1>
+  <div class="meta">
+    <span><strong>{{ .Date.Format "02 January 2006" }}</strong></span>
+    {{- with .Params.original_url }}<span>Source · <a href="{{ . }}" target="_blank" rel="noopener" style="color:var(--navy)">wsj.com ↗</a></span>{{ end }}
+    {{- with .Params.tags }}<span>{{ range $i, $t := . }}{{ if $i }} · {{ end }}{{ $t }}{{ end }}</span>{{ end }}
+  </div>
+</header>
+
+<article class="article">
+  {{ .Content }}
+</article>
+
+<nav class="nav-bottom">
+  {{- with .PrevInSection }}<a href="{{ .RelPermalink }}" class="prev">{{ .Date.Format "02 Jan" }}</a>{{ else }}<span></span>{{ end }}
+  <a href="{{ "/wsj/" | relURL }}" class="home">WSJ · Archive</a>
+  {{- with .NextInSection }}<a href="{{ .RelPermalink }}" class="next">{{ .Date.Format "02 Jan" }}</a>{{ else }}<span></span>{{ end }}
+</nav>
+
+<div class="footer">
+  <span>© MMXXVI Bolgheri</span>
+  <span>Source · Wall Street Journal · wsj.com</span>
+</div>
+
+{{- partial "google_analytics.html" . -}}
+</body>
+</html>
