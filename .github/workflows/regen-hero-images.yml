@@ -1,0 +1,132 @@
+name: Regenerate Missing Hero Images
+
+on:
+  workflow_dispatch:
+    inputs:
+      sources:
+        description: 'Sources to process (comma-separated or "all")'
+        required: false
+        default: 'all'
+        type: string
+      dates:
+        description: 'Specific dates (comma-separated YYYY-MM-DD). Leave empty to auto-detect missing images.'
+        required: false
+        default: ''
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  regen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      TZ: Asia/Tokyo
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Regenerate hero images
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          ALL_SOURCES="wsj nyt-bn short-squeez skift buysiders nyt-op business-insider"
+
+          INPUT="${{ github.event.inputs.sources }}"
+          if [ -z "$INPUT" ] || [ "$INPUT" = "all" ]; then
+            SOURCES="$ALL_SOURCES"
+          else
+            SOURCES=$(echo "$INPUT" | tr ',' ' ')
+          fi
+
+          INPUT_DATES="${{ github.event.inputs.dates }}"
+
+          SUCCESS=0
+          FAILED=0
+          SKIPPED=0
+
+          for SOURCE in $SOURCES; do
+            echo "::group::🎨 Processing $SOURCE"
+
+            if [ -n "$INPUT_DATES" ]; then
+              DATES=$(echo "$INPUT_DATES" | tr ',' ' ')
+            else
+              DATES=""
+              for f in content/$SOURCE/*.md; do
+                [[ "$f" == *"_index.md"* ]] && continue
+                [ -f "$f" ] || continue
+                if ! grep -q "^hero_image:" "$f"; then
+                  date=$(basename "$f" .md)
+                  DATES="$DATES $date"
+                fi
+              done
+            fi
+
+            if [ -z "$(echo $DATES | tr -d ' ')" ]; then
+              echo "✅ No missing images for $SOURCE"
+              echo "::endgroup::"
+              continue
+            fi
+
+            for DATE in $DATES; do
+              MD_PATH="content/$SOURCE/$DATE.md"
+              if [ ! -f "$MD_PATH" ]; then
+                echo "⏭️ $SOURCE/$DATE: no article, skipping"
+                SKIPPED=$((SKIPPED + 1))
+                continue
+              fi
+
+              IMG_PATH="static/images/$SOURCE/$DATE.png"
+              if [ -f "$IMG_PATH" ] && grep -q "^hero_image:" "$MD_PATH"; then
+                echo "⏭️ $SOURCE/$DATE: already has hero image, skipping"
+                SKIPPED=$((SKIPPED + 1))
+                continue
+              fi
+
+              echo "🎨 Generating hero image for $SOURCE/$DATE..."
+              mkdir -p "static/images/$SOURCE"
+
+              set +e
+              python scripts/generate_hero_image.py "$SOURCE" "$DATE"
+              IMG_EXIT=$?
+              set -e
+
+              if [ $IMG_EXIT -eq 0 ]; then
+                echo "✅ $SOURCE/$DATE: hero image generated"
+                SUCCESS=$((SUCCESS + 1))
+              else
+                echo "❌ $SOURCE/$DATE: image generation failed (exit=$IMG_EXIT)"
+                FAILED=$((FAILED + 1))
+              fi
+
+              sleep 3
+            done
+
+            echo "::endgroup::"
+          done
+
+          echo ""
+          echo "📊 Summary: ✅ $SUCCESS generated, ⏭️ $SKIPPED skipped, ❌ $FAILED failed"
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add static/images/ content/ 2>/dev/null || git add content/
+          if git diff --cached --quiet; then
+            echo "No new images to commit"
+          else
+            CHANGED=$(git diff --cached --name-only | wc -l)
+            git commit -m "Regen hero images $(date +%Y-%m-%d) [${CHANGED} file(s)]"
+            git push
+            echo "✅ Pushed ${CHANGED} file(s)"
+          fi
