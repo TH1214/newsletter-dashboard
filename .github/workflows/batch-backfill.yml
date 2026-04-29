@@ -1,0 +1,155 @@
+name: Batch Backfill Translations
+
+on:
+  workflow_dispatch:
+    inputs:
+      date_from:
+        description: 'Start date (YYYY-MM-DD)'
+        required: true
+        type: string
+      date_to:
+        description: 'End date (YYYY-MM-DD, inclusive). Leave empty for yesterday.'
+        required: false
+        default: ''
+        type: string
+      sources:
+        description: 'Sources (comma-separated or "all")'
+        required: false
+        default: 'all'
+        type: string
+      skip_existing:
+        description: 'Skip dates that already have content files (true/false)'
+        required: false
+        default: 'true'
+        type: string
+
+permissions:
+  contents: write
+  models: read
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      TZ: Asia/Tokyo
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Backfill translations
+        env:
+          GMAIL_CLIENT_ID: ${{ secrets.GMAIL_CLIENT_ID }}
+          GMAIL_CLIENT_SECRET: ${{ secrets.GMAIL_CLIENT_SECRET }}
+          GMAIL_REFRESH_TOKEN: ${{ secrets.GMAIL_REFRESH_TOKEN }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TRANSLATION_MODEL: openai/gpt-4.1
+          GITHUB_MODELS_ENDPOINT: https://models.github.ai/inference
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          set -euo pipefail
+
+          env INPUT_DATE_FROM="${{ inputs.date_from }}" \
+              INPUT_DATE_TO="${{ inputs.date_to }}" \
+              python3 - << 'INNER'
+          from datetime import date, timedelta
+          import os
+
+          start = date.fromisoformat(os.environ['INPUT_DATE_FROM'])
+          end_s  = os.environ.get('INPUT_DATE_TO', '').strip()
+          end    = date.fromisoformat(end_s) if end_s else date.today() - timedelta(1)
+
+          dates = []
+          d = start
+          while d <= end:
+              if d.weekday() < 5:
+                  dates.append(d.strftime('%Y-%m-%d'))
+              d += timedelta(1)
+
+          print(f"Target dates ({len(dates)}): {dates}")
+          with open('/tmp/backfill_dates.txt', 'w') as f:
+              f.write('\n'.join(dates))
+          INNER
+
+          ALL_SOURCES="wsj nyt-bn short-squeez skift buysiders nyt-op business-insider"
+          INPUT_SOURCES="${{ inputs.sources }}"
+          if [ -z "$INPUT_SOURCES" ] || [ "$INPUT_SOURCES" = "all" ]; then
+            SOURCES="$ALL_SOURCES"
+          else
+            SOURCES=$(echo "$INPUT_SOURCES" | tr ',' ' ')
+          fi
+
+          SKIP_EXISTING="${{ inputs.skip_existing }}"
+          TOTAL_OK=0; TOTAL_SKIP=0; TOTAL_FAIL=0
+
+          while IFS= read -r DATE || [ -n "$DATE" ]; do
+            [ -z "$DATE" ] && continue
+            echo "========== $DATE =========="
+
+            for SOURCE in $SOURCES; do
+              if [ "$SKIP_EXISTING" = "true" ] && [ -f "content/${SOURCE}/${DATE}.md" ]; then
+                echo "  skip $SOURCE (exists)"
+                TOTAL_SKIP=$((TOTAL_SKIP+1))
+                continue
+              fi
+
+              echo "  fetch $SOURCE ..."
+              if ! python scripts/fetch_gmail.py "$SOURCE" "$DATE" \
+                     > "/tmp/email_${SOURCE}.txt" 2>/tmp/fetch_err.txt; then
+                echo "  FAIL fetch: $(tail -1 /tmp/fetch_err.txt)"
+                TOTAL_FAIL=$((TOTAL_FAIL+1))
+                continue
+              fi
+              if grep -q "NO_EMAIL_FOUND" "/tmp/email_${SOURCE}.txt"; then
+                echo "  no email for $SOURCE on $DATE"
+                TOTAL_SKIP=$((TOTAL_SKIP+1))
+                continue
+              fi
+
+              mkdir -p "content/${SOURCE}"
+              if python scripts/translate_gemini.py "$SOURCE" "$DATE" \
+                     < "/tmp/email_${SOURCE}.txt" \
+                     > "/tmp/tr_${SOURCE}.md" 2>/tmp/tr_err.txt \
+                 && [ -s "/tmp/tr_${SOURCE}.md" ] \
+                 && head -1 "/tmp/tr_${SOURCE}.md" | grep -q "^---"; then
+
+                cp "/tmp/tr_${SOURCE}.md" "content/${SOURCE}/${DATE}.md"
+                echo "  OK -> content/${SOURCE}/${DATE}.md"
+                TOTAL_OK=$((TOTAL_OK+1))
+
+                python scripts/generate_hero_image.py "$SOURCE" "$DATE" \
+                  2>/tmp/img_err.txt && echo "  hero image ok" || echo "  hero image skipped"
+              else
+                echo "  FAIL translate $SOURCE on $DATE"
+                tail -5 /tmp/tr_err.txt || true
+                TOTAL_FAIL=$((TOTAL_FAIL+1))
+              fi
+            done
+          done < /tmp/backfill_dates.txt
+
+          echo "Backfill done: OK=$TOTAL_OK SKIP=$TOTAL_SKIP FAIL=$TOTAL_FAIL"
+
+      - name: Commit and push
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin main
+          git add content/ static/images/ 2>/dev/null || git add content/
+          if git diff --cached --quiet; then
+            echo "Nothing new to commit."
+          else
+            COUNT=$(git diff --cached --name-only | wc -l)
+            DATE_RANGE="${{ inputs.date_from }}_to_${{ inputs.date_to || 'latest' }}"
+            git commit -m "Backfill ${DATE_RANGE} [${COUNT} files]"
+            git push
+            echo "Pushed ${COUNT} files"
+          fi
