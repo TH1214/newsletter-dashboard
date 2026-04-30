@@ -37,6 +37,7 @@ import urllib.error
 TRANSLATE_PROMPT_PATH = "scripts/translate_prompt.md"
 DEFAULT_ENDPOINT = "https://models.github.ai/inference"
 DEFAULT_MODEL = "openai/gpt-4o-mini"
+GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
 
 # GPT-4.1 の入力上限は 8000 tokens。translate_prompt.md (~600 tok) と
 # チャンク指示 (~200 tok) を除いた安全域として本文 6500 文字を既定とする。
@@ -121,6 +122,63 @@ def call_github_models(base_url: str, token: str, model: str, prompt: str,
 
     # ここに来ることは通常無い (ループ内で return か sys.exit) が念のため
     print(f"[error] GitHub Models exhausted retries: {last_error_msg}", file=sys.stderr)
+    sys.exit(1)
+
+
+def call_gemini_api(api_key: str, prompt: str,
+                    max_retries: int = DEFAULT_MAX_RETRIES) -> str:
+    """Google Gemini API を直接呼び出して翻訳結果を返じ (GEMINI_API_KEY 利用)。
+
+    GitHub Models の代替バックエンド。GEMINI_API_KEY が設定されている場合に使用。
+    HTTP 429 時は exponential backoff でリトライ。
+    """
+    url = f"{GEMINI_API_URL}?key={api_key}"
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {"temperature": 0.3, "maxOutputTokens": 8192},
+    }
+    data = json.dumps(payload).encode("utf-8")
+    headers = {"Content-Type": "application/json"}
+
+    last_error_msg = ""
+    for attempt in range(max_retries + 1):
+        req = urllib.request.Request(url, data=data, headers=headers, method="POST")
+        try:
+            with urllib.request.urlopen(req) as resp:
+                result = json.loads(resp.read().decode("utf-8"))
+            text = result["candidates"][0]["content"]["parts"][0]["text"]
+            print(
+                f"[gemini] OK" + (f" (retry {attempt})" if attempt > 0 else ""),
+                file=sys.stderr,
+            )
+            return text
+
+        except urllib.error.HTTPError as e:
+            body = e.read().decode("utf-8", errors="replace")
+            try:
+                msg = json.loads(body).get("error", {}).get("message", body)
+            except Exception:
+                msg = body
+            last_error_msg = f"HTTP {e.code}: {msg}"
+
+            if e.code == 429 and attempt < max_retries:
+                delay = BACKOFF_DELAYS[attempt] if attempt < len(BACKOFF_DELAYS) else BACKOFF_DELAYS[-1]
+                print(
+                    f"[gemini] HTTP 429 rate-limited; backing off {delay}s "
+                    f"(attempt {attempt + 1}/{max_retries})",
+                    file=sys.stderr,
+                )
+                time.sleep(delay)
+                continue
+
+            print(f"[error] Gemini API {last_error_msg}", file=sys.stderr)
+            sys.exit(1)
+
+        except Exception as e:
+            print(f"[error] Unexpected error: {type(e).__name__}: {e}", file=sys.stderr)
+            sys.exit(1)
+
+    print(f"[error] Gemini API exhausted retries: {last_error_msg}", file=sys.stderr)
     sys.exit(1)
 
 
@@ -227,7 +285,7 @@ def build_chunk_prompt(base_prompt: str, source: str, date: str,
         directive = (
             "【分割翻訳の指示】\n"
             f"この本文は長いため {total} チャンクに分割されています。\n"
-            f"あなたが今翻訳しているのは PART {part}/{total} (先頭) です。\n"
+            f"あなたが今翻訳しているは PART {part}/{total} (先�-) です。\n"
             "- 出力の先頭に front matter を 1 回だけ付けてください。\n"
             "- エグゼクティブサマリー表は本文全体を踏まえた内容で作成してください。\n"
             "- 本文は続編 (後続チャンク) があるため、最後は区切りのよい位置で止めて構いません。\n"
@@ -237,7 +295,7 @@ def build_chunk_prompt(base_prompt: str, source: str, date: str,
         directive = (
             "【分割翻訳の指示】\n"
             f"この本文は長いため {total} チャンクに分割されています。\n"
-            f"あなたが今翻訳しているのは PART {part}/{total} (続編) です。\n"
+            f"あなたが今翻訳しているは PART {part}/{total} (続編) です。\n"
             "- front matter は絶対に出力しないでください (PART 1 で既に出力済み)。\n"
             "- タイトル行・配信元引用行・エグゼクティブサマリー表も重複させないでください。\n"
             "- このチャンクに含まれる記事・段落を、スタイルルールに従って本文のみ全訳してください。\n"
@@ -276,9 +334,13 @@ def main():
     date = sys.argv[2]
 
     token = os.environ.get("GITHUB_TOKEN")
-    if not token:
-        print("[error] GITHUB_TOKEN is not set", file=sys.stderr)
+    gemini_api_key = os.environ.get("GEMINI_API_KEY")
+    use_gemini = bool(gemini_api_key)
+
+    if not use_gemini and not token:
+        print("[error] Neither GEMINI_API_KEY nor GITHUB_TOKEN is set", file=sys.stderr)
         sys.exit(1)
+
     model = os.environ.get("TRANSLATION_MODEL", DEFAULT_MODEL)
     base_url = os.environ.get("GITHUB_MODELS_ENDPOINT", DEFAULT_ENDPOINT)
 
@@ -297,13 +359,21 @@ def main():
     except ValueError:
         max_retries = DEFAULT_MAX_RETRIES
 
-    print(
-        f"[github-models] endpoint={base_url} model={model} "
-        f"token={token[:4]}...{token[-4:]} (len={len(token)}) "
-        f"chunk_limit={chunk_limit} chunk_sleep={chunk_sleep_sec}s "
-        f"max_retries={max_retries}",
-        file=sys.stderr,
-    )
+    if use_gemini:
+        print(
+            f"[gemini] backend=Google Gemini API (gemini-2.0-flash) "
+            f"chunk_limit={chunk_limit} chunk_sleep={chunk_sleep_sec}s "
+            f"max_retries={max_retries}",
+            file=sys.stderr,
+        )
+    else:
+        print(
+            f"[github-models] endpoint={base_url} model={model} "
+            f"token={token[:4]}...{token[-4:]} (len={len(token)}) "
+            f"chunk_limit={chunk_limit} chunk_sleep={chunk_sleep_sec}s "
+            f"max_retries={max_retries}",
+            file=sys.stderr,
+        )
 
     email_content = sys.stdin.read()
     if not email_content.strip():
@@ -325,18 +395,26 @@ def main():
         chunks = split_into_chunks(email_content, chunk_limit)
 
     total = len(chunks)
-    print(f"[github-models] chunk count: {total}", file=sys.stderr)
+    backend_tag = "[gemini]" if use_gemini else "[github-models]"
+    print(f"{backend_tag} chunk count: {total}", file=sys.stderr)
     for i, c in enumerate(chunks, 1):
-        print(f"[github-models]   chunk {i}/{total}: {len(c)} chars", file=sys.stderr)
+        print(f"{backend_tag}   chunk {i}/{total}: {len(c)} chars", file=sys.stderr)
+
+    def call_api(prompt: str) -> str:
+        """バックエンドに応じて Gemini または GitHub Models を呼び出す。"""
+        if use_gemini:
+            return call_gemini_api(gemini_api_key, prompt, max_retries=max_retries)
+        else:
+            return call_github_models(base_url, token, model, prompt, max_retries=max_retries)
 
     # ── 単一チャンク: 従来どおりの I/O 挙動を完全維持 ──
     if total == 1:
         full_prompt = build_single_chunk_prompt(translate_prompt, source, date, chunks[0])
-        print(f"[github-models] Full prompt: {len(full_prompt)} bytes", file=sys.stderr)
-        print("[github-models] Calling GitHub Models (single chunk)...", file=sys.stderr)
-        result = call_github_models(base_url, token, model, full_prompt, max_retries=max_retries)
+        print(f"{backend_tag} Full prompt: {len(full_prompt)} bytes", file=sys.stderr)
+        print(f"{backend_tag} Calling translation API (single chunk)...", file=sys.stderr)
+        result = call_api(full_prompt)
         result = strip_code_fences(result)
-        print(f"[github-models] Output: {len(result)} bytes", file=sys.stderr)
+        print(f"{backend_tag} Output: {len(result)} bytes", file=sys.stderr)
         print(result)
         sys.exit(0)
 
@@ -347,11 +425,11 @@ def main():
     for i, chunk in enumerate(chunks, 1):
         prompt = build_chunk_prompt(translate_prompt, source, date, chunk, i, total)
         print(
-            f"[github-models] Translating chunk {i}/{total} "
+            f"{backend_tag} Translating chunk {i}/{total} "
             f"(prompt={len(prompt)} bytes, chunk={len(chunk)} chars)...",
             file=sys.stderr,
         )
-        result = call_github_models(base_url, token, model, prompt, max_retries=max_retries)
+        result = call_api(prompt)
         result = strip_code_fences(result)
 
         fm, body = extract_front_matter(result)
@@ -361,7 +439,7 @@ def main():
         else:
             if fm is not None:
                 print(
-                    f"[github-models] [warn] chunk {i} returned an extra front matter; discarding",
+                    f"{backend_tag} [warn] chunk {i} returned an extra front matter; discarding",
                     file=sys.stderr,
                 )
             bodies.append(body)
