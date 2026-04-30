@@ -39,6 +39,10 @@ DEFAULT_ENDPOINT = "https://models.github.ai/inference"
 DEFAULT_MODEL = "openai/gpt-4o-mini"
 GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
 
+# Groq API (OpenAI 互換) — 無料枠で 14,400 req/day, 30 RPM
+GROQ_API_URL = "https://api.groq.com/openai/v1"
+GROQ_DEFAULT_MODEL = "llama-3.3-70b-versatile"
+
 # GPT-4.1 の入力上限は 8000 tokens。translate_prompt.md (~600 tok) と
 # チャンク指示 (~200 tok) を除いた安全域として本文 6500 文字を既定とする。
 # 日本語/英語混在で 1 tok ≈ 3 chars 想定 → 6500 chars ≈ 2200 tok。
@@ -122,6 +126,73 @@ def call_github_models(base_url: str, token: str, model: str, prompt: str,
 
     # ここに来ることは通常無い (ループ内で return か sys.exit) が念のため
     print(f"[error] GitHub Models exhausted retries: {last_error_msg}", file=sys.stderr)
+    sys.exit(1)
+
+
+def call_groq_api(api_key: str, prompt: str,
+                  model: str = GROQ_DEFAULT_MODEL,
+                  max_retries: int = DEFAULT_MAX_RETRIES) -> str:
+    """Groq API (OpenAI 互換) を呼び出して翻訳結果を返す。
+
+    GROQ_API_KEY が設定されている場合に優先使用。
+    無料枠: 30 RPM / 14,400 RPD — バッチ処理に最適。
+    HTTP 429 時は exponential backoff でリトライ。
+    """
+    url = f"{GROQ_API_URL}/chat/completions"
+    payload = {
+        "model": model,
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0.3,
+        "max_tokens": 8192,
+    }
+    data = json.dumps(payload).encode("utf-8")
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+
+    last_error_msg = ""
+    for attempt in range(max_retries + 1):
+        req = urllib.request.Request(url, data=data, headers=headers, method="POST")
+        try:
+            with urllib.request.urlopen(req) as resp:
+                result = json.loads(resp.read().decode("utf-8"))
+            text = result["choices"][0]["message"]["content"]
+            usage = result.get("usage", {})
+            print(
+                f"[groq] OK model={model} "
+                f"tokens=in:{usage.get('prompt_tokens','?')}/out:{usage.get('completion_tokens','?')}"
+                + (f" (retry {attempt})" if attempt > 0 else ""),
+                file=sys.stderr,
+            )
+            return text
+
+        except urllib.error.HTTPError as e:
+            body = e.read().decode("utf-8", errors="replace")
+            try:
+                msg = json.loads(body).get("error", {}).get("message", body)
+            except Exception:
+                msg = body
+            last_error_msg = f"HTTP {e.code}: {msg}"
+
+            if e.code == 429 and attempt < max_retries:
+                delay = BACKOFF_DELAYS[attempt] if attempt < len(BACKOFF_DELAYS) else BACKOFF_DELAYS[-1]
+                print(
+                    f"[groq] HTTP 429 rate-limited; backing off {delay}s "
+                    f"(attempt {attempt + 1}/{max_retries})",
+                    file=sys.stderr,
+                )
+                time.sleep(delay)
+                continue
+
+            print(f"[error] Groq API {last_error_msg}", file=sys.stderr)
+            sys.exit(1)
+
+        except Exception as e:
+            print(f"[error] Unexpected error: {type(e).__name__}: {e}", file=sys.stderr)
+            sys.exit(1)
+
+    print(f"[error] Groq API exhausted retries: {last_error_msg}", file=sys.stderr)
     sys.exit(1)
 
 
@@ -335,14 +406,26 @@ def main():
 
     token = os.environ.get("GITHUB_TOKEN")
     gemini_api_key = os.environ.get("GEMINI_API_KEY")
-    use_gemini = bool(gemini_api_key)
+    groq_api_key = os.environ.get("GROQ_API_KEY")
 
-    if not use_gemini and not token:
-        print("[error] Neither GEMINI_API_KEY nor GITHUB_TOKEN is set", file=sys.stderr)
+    # バックエンド優先順位: Groq (高レート制限) > Gemini > GitHub Models
+    if groq_api_key:
+        backend = "groq"
+    elif gemini_api_key:
+        backend = "gemini"
+    elif token:
+        backend = "github_models"
+    else:
+        print("[error] No API key found: set GROQ_API_KEY, GEMINI_API_KEY, or GITHUB_TOKEN",
+              file=sys.stderr)
         sys.exit(1)
+
+    # 後方互換のため use_gemini を維持
+    use_gemini = (backend == "gemini")
 
     model = os.environ.get("TRANSLATION_MODEL", DEFAULT_MODEL)
     base_url = os.environ.get("GITHUB_MODELS_ENDPOINT", DEFAULT_ENDPOINT)
+    groq_model = os.environ.get("GROQ_MODEL", GROQ_DEFAULT_MODEL)
 
     try:
         chunk_limit = int(os.environ.get("CHUNK_CHAR_LIMIT", DEFAULT_CHUNK_CHAR_LIMIT))
@@ -359,9 +442,16 @@ def main():
     except ValueError:
         max_retries = DEFAULT_MAX_RETRIES
 
-    if use_gemini:
+    if backend == "groq":
         print(
-            f"[gemini] backend=Google Gemini API (gemini-2.0-flash) "
+            f"[groq] backend=Groq API model={groq_model} "
+            f"chunk_limit={chunk_limit} chunk_sleep={chunk_sleep_sec}s "
+            f"max_retries={max_retries}",
+            file=sys.stderr,
+        )
+    elif backend == "gemini":
+        print(
+            f"[gemini] backend=Google Gemini API (gemini-1.5-flash) "
             f"chunk_limit={chunk_limit} chunk_sleep={chunk_sleep_sec}s "
             f"max_retries={max_retries}",
             file=sys.stderr,
@@ -379,7 +469,7 @@ def main():
     if not email_content.strip():
         print("[error] No email content provided via stdin", file=sys.stderr)
         sys.exit(1)
-    print(f"[github-models] Email content: {len(email_content)} bytes", file=sys.stderr)
+    print(f"[{backend}] Email content: {len(email_content)} bytes", file=sys.stderr)
 
     try:
         with open(TRANSLATE_PROMPT_PATH, "r", encoding="utf-8") as f:
@@ -395,14 +485,16 @@ def main():
         chunks = split_into_chunks(email_content, chunk_limit)
 
     total = len(chunks)
-    backend_tag = "[gemini]" if use_gemini else "[github-models]"
+    backend_tag = f"[{backend}]"
     print(f"{backend_tag} chunk count: {total}", file=sys.stderr)
     for i, c in enumerate(chunks, 1):
         print(f"{backend_tag}   chunk {i}/{total}: {len(c)} chars", file=sys.stderr)
 
     def call_api(prompt: str) -> str:
-        """バ��クエンドに応じて Gemini または GitHub Models を呼び出す。"""
-        if use_gemini:
+        """バックエンドに応じて Groq / Gemini / GitHub Models を呼び出す。"""
+        if backend == "groq":
+            return call_groq_api(groq_api_key, prompt, model=groq_model, max_retries=max_retries)
+        elif backend == "gemini":
             return call_gemini_api(gemini_api_key, prompt, max_retries=max_retries)
         else:
             return call_github_models(base_url, token, model, prompt, max_retries=max_retries)
@@ -447,13 +539,13 @@ def main():
         # チャンク間スリープ (最終チャンクの後は不要)
         if i < total and chunk_sleep_sec > 0:
             print(
-                f"[github-models] sleeping {chunk_sleep_sec}s before next chunk...",
+                f"{backend_tag} sleeping {chunk_sleep_sec}s before next chunk...",
                 file=sys.stderr,
             )
             time.sleep(chunk_sleep_sec)
 
     if front_matter is None:
-        print("[github-models] [warn] PART 1 did not produce front matter; using fallback",
+        print(f"{backend_tag} [warn] PART 1 did not produce front matter; using fallback",
               file=sys.stderr)
         front_matter = fallback_front_matter(source, date)
 
@@ -461,7 +553,7 @@ def main():
     final = f"{front_matter}\n\n{combined_body}\n"
 
     print(
-        f"[github-models] Final output: {len(final)} bytes "
+        f"{backend_tag} Final output: {len(final)} bytes "
         f"(combined from {total} chunks)",
         file=sys.stderr,
     )
