@@ -75,7 +75,7 @@ jobs:
                   dates.append(d.strftime('%Y-%m-%d'))
               d += timedelta(1)
 
-          print(f"Target dates ({len(dates)}): {ates}")
+          print(f"Target dates ({len(dates)}): {dates}")
           with open('/tmp/backfill_dates.txt', 'w') as f:
               f.write('\n'.join(dates))
           INNER
