@@ -178,7 +178,7 @@
 {{- with $latestPost }}{{ $heroUrl = .Params.hero_image | default "" }}{{ end -}}
 
 <!-- COVER HERO -->
-<section class="cover"{{ with $heroUrl }} style="--hero-img:url('{{ . | relURL }}')"{{ end }}>
+<section class="cover"{{ with $heroUrl }} style="--hero-img:url('{{ . | absURL }}')"{{ end }}>
   <div class="cover-photo"></div>
   <span class="cover-curve"></span>
   <span class="cover-curve c2"></span>
@@ -232,7 +232,7 @@
       {{- range $i, $p := $posts }}
       <a href="{{ $p.RelPermalink }}" class="arch-row">
         <div class="n">{{ printf "%02d" (sub (len $posts) $i) }}</div>
-        {{- with $p.Params.hero_image }}<img class="arch-thumb" src="{{ . | relURL }}" alt="" loading="lazy">{{- else }}<div class="arch-thumb-empty"></div>{{- end }}
+        {{- with $p.Params.hero_image }}<img class="arch-thumb" src="{{ . | absURL }}" alt="" loading="lazy">{{- else }}<div class="arch-thumb-empty"></div>{{- end }}
         <div>
           <h3>{{ $p.Title }}</h3>
           {{- with $p.Params.summary }}<span class="summary">{{ . }}</span>{{ end }}
