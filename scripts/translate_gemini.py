@@ -37,7 +37,7 @@ import urllib.error
 TRANSLATE_PROMPT_PATH = "scripts/translate_prompt.md"
 DEFAULT_ENDPOINT = "https://models.github.ai/inference"
 DEFAULT_MODEL = "openai/gpt-4o-mini"
-GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
 
 # GPT-4.1 の入力上限は 8000 tokens。translate_prompt.md (~600 tok) と
 # チャンク指示 (~200 tok) を除いた安全域として本文 6500 文字を既定とする。
@@ -127,7 +127,7 @@ def call_github_models(base_url: str, token: str, model: str, prompt: str,
 
 def call_gemini_api(api_key: str, prompt: str,
                     max_retries: int = DEFAULT_MAX_RETRIES) -> str:
-    """Google Gemini API を直接呼び出して翻訳結果を返じ (GEMINI_API_KEY 利用)。
+    """Google Gemini API を直接呼び出して翻訳結果を返す (GEMINI_API_KEY 利用)。
 
     GitHub Models の代替バックエンド。GEMINI_API_KEY が設定されている場合に使用。
     HTTP 429 時は exponential backoff でリトライ。
@@ -285,7 +285,7 @@ def build_chunk_prompt(base_prompt: str, source: str, date: str,
         directive = (
             "【分割翻訳の指示】\n"
             f"この本文は長いため {total} チャンクに分割されています。\n"
-            f"あなたが今翻訳しているは PART {part}/{total} (先�-) です。\n"
+            f"あなたが今翻訳しているのは PART {part}/{total} (先頭) です。\n"
             "- 出力の先頭に front matter を 1 回だけ付けてください。\n"
             "- エグゼクティブサマリー表は本文全体を踏まえた内容で作成してください。\n"
             "- 本文は続編 (後続チャンク) があるため、最後は区切りのよい位置で止めて構いません。\n"
@@ -295,7 +295,7 @@ def build_chunk_prompt(base_prompt: str, source: str, date: str,
         directive = (
             "【分割翻訳の指示】\n"
             f"この本文は長いため {total} チャンクに分割されています。\n"
-            f"あなたが今翻訳しているは PART {part}/{total} (続編) です。\n"
+            f"あなたが今翻訳しているのは PART {part}/{total} (続編) です。\n"
             "- front matter は絶対に出力しないでください (PART 1 で既に出力済み)。\n"
             "- タイトル行・配信元引用行・エグゼクティブサマリー表も重複させないでください。\n"
             "- このチャンクに含まれる記事・段落を、スタイルルールに従って本文のみ全訳してください。\n"
@@ -401,7 +401,7 @@ def main():
         print(f"{backend_tag}   chunk {i}/{total}: {len(c)} chars", file=sys.stderr)
 
     def call_api(prompt: str) -> str:
-        """バックエンドに応じて Gemini または GitHub Models を呼び出す。"""
+        """バ��クエンドに応じて Gemini または GitHub Models を呼び出す。"""
         if use_gemini:
             return call_gemini_api(gemini_api_key, prompt, max_retries=max_retries)
         else:
