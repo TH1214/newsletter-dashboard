@@ -64,8 +64,9 @@ jobs:
               for f in content/$SOURCE/*.md; do
                 [[ "$f" == *"_index.md"* ]] && continue
                 [ -f "$f" ] || continue
-                if ! grep -q "^hero_image:" "$f"; then
-                  date=$(basename "$f" .md)
+                date=$(basename "$f" .md)
+                IMG_PATH="static/images/$SOURCE/$date.png"
+                if [ ! -f "$IMG_PATH" ]; then
                   DATES="$DATES $date"
                 fi
               done
