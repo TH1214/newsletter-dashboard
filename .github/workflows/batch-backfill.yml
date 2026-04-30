@@ -6,7 +6,7 @@ on:
       date_from:
         description: 'Start date (YYYY-MM-DD)'
         required: true
-        type: string
+        type: strin
       date_to:
         description: 'End date (YYYY-MM-DD, inclusive). Leave empty for yesterday.'
         required: false
@@ -52,7 +52,7 @@ jobs:
           GMAIL_REFRESH_TOKEN: ${{ secrets.GMAIL_REFRESH_TOKEN }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TRANSLATION_MODEL: openai/gpt-4.1
+          TRANSLATION_MODEL: openai/gpt-4o-mini
           GITHUB_MODELS_ENDPOINT: https://models.github.ai/inference
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
@@ -75,7 +75,7 @@ jobs:
                   dates.append(d.strftime('%Y-%m-%d'))
               d += timedelta(1)
 
-          print(f"Target dates ({len(dates)}): {dates}")
+          print(f"Target dates ({len(dates)}): {ates}")
           with open('/tmp/backfill_dates.txt', 'w') as f:
               f.write('\n'.join(dates))
           INNER
