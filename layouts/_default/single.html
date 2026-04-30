@@ -1,11 +1,11 @@
 {{- /*
-  Universal Single Article Page â all non-WSJ sources
+  Universal Single Article Page — all non-WSJ sources
   Dynamically applies per-source color palette & branding.
   Hero image is displayed full-bleed at top with title overlay.
 */ -}}
 {{- $sec := .Section -}}
 
-{{- /* ââ Per-source palette ââ */ -}}
+{{- /* ── Per-source palette ── */ -}}
 {{- $bg       := "#0A0A0A" -}}
 {{- $bgMid    := "#141414" -}}
 {{- $accent   := "#2E5BFF" -}}
@@ -37,7 +37,7 @@
   {{- $bg = "#0D0D0D" -}}{{- $bgMid = "#161616" -}}
   {{- $accent = "#00C97A" -}}{{- $accentPale = "#00FF99" -}}
   {{- $paper = "#F5F5F0" -}}{{- $paperAlt = "#EEEEE8" -}}{{- $ink = "#0A0A0A" -}}{{- $rule = "#CCCCCC" -}}
-  {{- $sourceName = "Short Squeez Â· OWS" -}}{{- $listPath = "/short-squeez/" -}}
+  {{- $sourceName = "Short Squeez · OWS" -}}{{- $listPath = "/short-squeez/" -}}
 {{- else if eq $sec "business-insider" -}}
   {{- $bg = "#0A0F1A" -}}{{- $bgMid = "#111827" -}}
   {{- $accent = "#E85D04" -}}{{- $accentPale = "#FB923C" -}}
@@ -47,14 +47,14 @@
   {{- $bg = "#06060F" -}}{{- $bgMid = "#0E0E20" -}}
   {{- $accent = "#C9A84C" -}}{{- $accentPale = "#F0C84A" -}}
   {{- $paper = "#F5F3EE" -}}{{- $paperAlt = "#EDEAE2" -}}{{- $ink = "#06060F" -}}{{- $rule = "#C8C0A8" -}}
-  {{- $sourceName = "Buysiders Â· Deal Report" -}}{{- $listPath = "/buysiders/" -}}
+  {{- $sourceName = "Buysiders · Deal Report" -}}{{- $listPath = "/buysiders/" -}}
 {{- end -}}
 <!DOCTYPE html>
 <html lang="{{ site.Language.LanguageCode | default "ja" }}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{{ .Title }} â {{ $sourceName }} Â· Bolgheri</title>
+<title>{{ .Title }} — {{ $sourceName }} · Bolgheri</title>
 <meta name="description" content="{{ .Params.summary | default (.Summary | plainify | truncate 160) }}">
 {{- with .Params.hero_image }}<meta property="og:image" content="{{ . | strings.TrimPrefix "/" | absURL }}">{{ end }}
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -76,13 +76,13 @@
   a{color:var(--accent);text-decoration:none;transition:opacity .2s}
   a:hover{opacity:.75}
 
-  /* ââ TOP BAR ââ */
+  /* ── TOP BAR ── */
   .topbar{display:flex;justify-content:space-between;align-items:center;padding:16px 48px;background:var(--bg);border-bottom:3px solid var(--accent);font-family:'Space Grotesk',sans-serif;font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:rgba(255,255,255,.8);font-weight:500;position:sticky;top:0;z-index:100}
   .topbar a{color:rgba(255,255,255,.8);border:none}
   .topbar a:hover{color:var(--accent-pale);opacity:1}
   .topbar .logo{font-family:'Fraunces',serif;font-style:italic;font-size:15px;letter-spacing:.01em;text-transform:none;color:#fff;font-weight:500}
 
-  /* ââ HERO IMAGE ââ */
+  /* ── HERO IMAGE ── */
   .hero-img-block{position:relative;width:100%;height:70vh;min-height:480px;max-height:780px;overflow:hidden;background:var(--bg)}
   .hero-img-block img.hero-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;display:block;filter:brightness(.78) saturate(.9)}
   .hero-gradient{position:absolute;inset:0;background:linear-gradient(to bottom, rgba(0,0,0,.08) 0%, rgba(0,0,0,.15) 30%, rgba(0,0,0,.55) 65%, rgba(0,0,0,.88) 100%);pointer-events:none}
@@ -97,14 +97,14 @@
   .hero-text .meta-row span::before{content:"";width:4px;height:4px;background:var(--accent-pale);border-radius:50%;display:inline-block}
   .hero-text .meta-row span:first-child::before{display:none}
 
-  /* ââ NO-IMAGE FALLBACK HEADER ââ */
+  /* ── NO-IMAGE FALLBACK HEADER ── */
   .hero-fallback{padding:72px 56px 56px;background:var(--bg);border-bottom:4px solid var(--accent)}
   .hero-fallback .kicker{font-family:'Space Grotesk',sans-serif;font-size:10.5px;font-weight:700;letter-spacing:.32em;text-transform:uppercase;color:var(--accent-pale);margin-bottom:22px;display:inline-flex;align-items:center;gap:12px}
   .hero-fallback .kicker::before{content:"";width:28px;height:1.5px;background:var(--accent-pale)}
   .hero-fallback h1{font-family:'Archivo Black',sans-serif;font-size:clamp(34px,5vw,76px);line-height:.95;letter-spacing:-.03em;color:#fff;text-transform:uppercase;margin-bottom:22px}
   .hero-fallback .meta-row{display:flex;flex-wrap:wrap;gap:20px;font-family:'Space Grotesk',sans-serif;font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:rgba(255,255,255,.65);font-weight:500}
 
-  /* ââ ARTICLE BODY ââ */
+  /* ── ARTICLE BODY ── */
   .article-wrap{max-width:780px;margin:0 auto;padding:64px 48px 96px}
   .article-wrap h2{font-family:'Archivo Black',sans-serif;font-size:30px;line-height:1.1;letter-spacing:-.02em;text-transform:uppercase;color:var(--ink);margin:60px 0 18px;padding-top:20px;border-top:2px solid var(--accent)}
   .article-wrap h2::first-letter{color:var(--accent)}
@@ -128,20 +128,20 @@
   .article-wrap hr{border:none;border-top:1.5px solid var(--rule);margin:44px 0}
   .article-wrap code{background:var(--paper-alt);padding:2px 6px;font-family:'Space Grotesk',sans-serif;font-size:14px}
 
-  /* ââ BOTTOM NAV ââ */
+  /* ── BOTTOM NAV ── */
   .nav-bottom{max-width:1080px;margin:0 auto;padding:36px 48px 20px;display:flex;justify-content:space-between;gap:16px;font-family:'Space Grotesk',sans-serif;font-size:10px;letter-spacing:.26em;text-transform:uppercase;color:var(--bg-mid);font-weight:600;border-top:1px solid var(--rule)}
   .nav-bottom a{color:var(--ink);border:none;padding:13px 22px;border:1.5px solid var(--bg);transition:all .2s}
   .nav-bottom a:hover{background:var(--bg);color:var(--paper);opacity:1}
-  .nav-bottom .prev::before{content:"â "}
-  .nav-bottom .next::after{content:" â"}
+  .nav-bottom .prev::before{content:"← "}
+  .nav-bottom .next::after{content:" →"}
   .nav-bottom .home{margin-left:auto;margin-right:auto;color:var(--accent);border:none;padding:13px 0;letter-spacing:.3em}
   .nav-bottom .home:hover{background:transparent;color:var(--bg)}
 
-  /* ââ FOOTER ââ */
+  /* ── FOOTER ── */
   .footer{display:flex;justify-content:space-between;padding:20px 48px;background:var(--bg);color:rgba(255,255,255,.5);font-family:'Space Grotesk',sans-serif;font-size:10px;letter-spacing:.22em;text-transform:uppercase;font-weight:500}
   .footer a{color:rgba(255,255,255,.5)}
 
-  /* ââ RESPONSIVE ââ */
+  /* ── RESPONSIVE ── */
   @media(max-width:900px){
     .topbar{padding:14px 28px}
     .hero-text{padding:36px 28px 40px}
@@ -167,16 +167,16 @@
     .article-wrap h3{font-size:18px}
     .article-wrap p:first-of-type::first-letter{font-size:52px;padding:4px 10px 0 0}
     .article-wrap blockquote{padding:6px 16px;font-size:15px}
-    .nav-bottom{flex-direction:column;padding:24px 20px;gap:10px}
+    .nav-botton{flex-direction:column;padding:24px 20px;gap:10px}
     .nav-bottom a{padding:12px 16px;font-size:9.5px;letter-spacing:.18em}
-    .footer{flex-direction:column;gap:5px;padding:14px 20px;text-align:center;font-size:9py}
+    .footer{flex-direction:column;gap:5px;padding:14px 20px;text-align:center;font-size:9px}
   }
 </style>
 </head>
 <body>
 
 <nav class="topbar">
-  <a href="{{ $listPath | relURL }}">â {{ $sourceName }}</a>
+  <a href="{{ $listPath | relURL }}">← {{ $sourceName }}</a>
   <span class="logo">Bolgheri</span>
   <a href="{{ "/" | relURL }}">Daily Brief</a>
 </nav>
@@ -187,18 +187,18 @@
   <img class="hero-photo" src="{{ . | strings.TrimPrefix "/" | absURL }}" alt="{{ $.Title }}">
   <div class="hero-gradient"></div>
   <div class="hero-text">
-    <div class="kicker">{{ $sourceName }} Â· Dispatch</div>
+    <div class="kicker">{{ $sourceName }} · Dispatch</div>
     <h1>{{ $.Title }}</h1>
     <div class="meta-row">
       <span>{{ $.Date.Format "02 January 2006" }}</span>
-      {{- with $.Params.original_url }}<span><a href="{{ . }}" target="_blank" rel="noopener" style="color:rgba(255,255,255,.7)">Source â</a></span>{{ end }}
+      {{- with $.Params.original_url }}<span><a href="{{ . }}" target="_blank" rel="noopener" style="color:rgba(255,255,255,.7)">Source ↗</a></span>{{ end }}
       {{- with $.Params.tags }}{{ range $i, $t := . }}{{if $i}}<span>{{ $t }}</span>{{end}}{{ end }}{{ end }}
     </div>
   </div>
 </div>
 {{- else }}
 <header class="hero-fallback">
-  <div class="kicker">{{ $sourceName }} Â· Dispatch</div>
+  <div class="kicker">{{ $sourceName }} · Dispatch</div>
   <h1>{{ .Title }}</h1>
   <div class="meta-row">
     <span style="display:inline-block">{{ .Date.Format "02 January 2006" }}</span>
@@ -212,12 +212,12 @@
 
 <nav class="nav-bottom">
   {{- with .PrevInSection }}<a href="{{ .RelPermalink }}" class="prev">{{ .Date.Format "02 Jan" }}</a>{{ else }}<span></span>{{ end }}
-  <a href="{{ $listPath | relURL }}" class="home">{{ $sourceName }} Â· Archive</a>
+  <a href="{{ $listPath | relURL }}" class="home">{{ $sourceName }} · Archive</a>
   {{- with .NextInSection }}<a href="{{ .RelPermalink }}" class="next">{{ .Date.Format "02 Jan" }}</a>{{ else }}<span></span>{{ end }}
 </nav>
 
 <footer class="footer">
-  <span>Â© MMXXVI Bolgheri Daily Brief</span>
+  <span>© MMXXVI Bolgheri Daily Brief</span>
   <span>{{ $sourceName }}</span>
   <a href="{{ "/" | relURL }}">Home</a>
 </footer>
