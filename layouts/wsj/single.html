@@ -1,14 +1,14 @@
 {{- /*
-  WSJ Â· Individual Article Page
-  WSJ ã®ãã©ã³ãã»ã«ã©ã¼ãç¶æ¿ãããããã« Typography ãã³ãã¬ã
-  ç¿»è¨³æ¬æ ({{ .Content }}) + åè¾¼ç»åããã®ã¾ã¾ã¬ã³ããªã³ã°ã
+  WSJ · Individual Article Page
+  WSJ のフォント・カラーを継承したミニマル Typography テンプレ。
+  翻訳本文 ({{ .Content }}) + 埋込画像をそのままレンダリング。
 */ -}}
 <!DOCTYPE html>
 <html lang="{{ site.Language.LanguageCode | default "ja" }}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{{ .Title }} â WSJ Â· Bolgheri</title>
+<title>{{ .Title }} — WSJ · Bolgheri</title>
 <meta name="description" content="{{ .Params.summary | default (.Summary | plainify | truncate 160) }}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -82,8 +82,8 @@
   .nav-bottom{max-width:1080px;margin:0 auto;padding:40px 48px 20px;display:flex;justify-content:space-between;gap:20px;font-family:'Space Grotesk',sans-serif;font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--navy-mid);font-weight:600;border-top:1px solid var(--rule)}
   .nav-bottom a{color:var(--navy);border:none;padding:14px 24px;border:1.5px solid var(--navy);transition:all .2s}
   .nav-bottom a:hover{background:var(--navy);color:var(--paper)}
-  .nav-bottom .prev::before{content:"â "}
-  .nav-bottom .next::after{content:" â"}
+  .nav-bottom .prev::before{content:"← "}
+  .nav-bottom .next::after{content:" →"}
   .nav-bottom .home{margin-left:auto;margin-right:auto;color:var(--blue);border:none;padding:14px 0;letter-spacing:.3em}
   .nav-bottom .home:hover{background:transparent;color:var(--navy)}
 
@@ -133,7 +133,7 @@
 <body>
 
 <nav class="topbar">
-  <a href="{{ "/wsj/" | relURL }}">â WSJ Â· The 10-Point</a>
+  <a href="{{ "/wsj/" | relURL }}">← WSJ · The 10-Point</a>
   <span class="logo">{{ .Date.Format "02 Jan 2006" }}</span>
   <a href="{{ "/" | relURL }}">Bolgheri Daily Brief</a>
 </nav>
@@ -144,22 +144,22 @@
   <img src="{{ .Params.hero_image | strings.TrimPrefix "/" | absURL }}" alt="{{ .Title }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;display:block;filter:brightness(.75) saturate(.85)">
   <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(6,20,45,.05) 0%,rgba(6,20,45,.18) 35%,rgba(6,20,45,.60) 65%,rgba(6,20,45,.92) 100%);pointer-events:none"></div>
   <div style="position:absolute;bottom:0;left:0;right:0;padding:44px 56px 50px;max-width:1080px">
-    <div style="font-family:'Space Grotesk',sans-serif;font-size:10.5px;font-weight:700;letter-spacing:.32em;text-transform:uppercase;color:var(--sky);margin-bottom:16px;display:inline-flex;align-items:center;gap:12px"><span style="width:26px;height:1.5px;background:var(--sky);display:inline-block"></span>WSJ Â· The 10-Point Â· Dispatch</div>
+    <div style="font-family:'Space Grotesk',sans-serif;font-size:10.5px;font-weight:700;letter-spacing:.32em;text-transform:uppercase;color:var(--sky);margin-bottom:16px;display:inline-flex;align-items:center;gap:12px"><span style="width:26px;height:1.5px;background:var(--sky);display:inline-block"></span>WSJ · The 10-Point · Dispatch</div>
     <h1 style="font-family:'Archivo Black',sans-serif;font-size:clamp(30px,4.6vw,68px);line-height:.96;letter-spacing:-.032em;color:#fff;text-transform:uppercase;margin-bottom:18px;text-shadow:0 2px 20px rgba(0,0,0,.4)">{{ .Title }}</h1>
     <div style="display:flex;flex-wrap:wrap;gap:18px;font-family:'Space Grotesk',sans-serif;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.65);font-weight:500">
       <span>{{ .Date.Format "02 January 2006" }}</span>
-      {{- with .Params.original_url }}<span><a href="{{ . }}" target="_blank" rel="noopener" style="color:rgba(255,255,255,.65)">wsj.com â</a></span>{{ end }}
+      {{- with .Params.original_url }}<span><a href="{{ . }}" target="_blank" rel="noopener" style="color:rgba(255,255,255,.65)">wsj.com ↗</a></span>{{ end }}
     </div>
   </div>
 </div>
 {{- else }}
 <header class="hero">
-  <div class="kicker">WSJ Â· The 10-Point Â· Dispatch</div>
+  <div class="kicker">WSJ · The 10-Point · Dispatch</div>
   <h1>{{ .Title }}</h1>
   <div class="meta">
     <span><strong>{{ .Date.Format "02 January 2006" }}</strong></span>
-    {{- with .Params.original_url }}<span>Source Â· <a href="{{ . }}" target="_blank" rel="noopener" style="color:var(--navy)">wsj.com â</a></span>{{ end }}
-    {{- with .Params.tags }}<span>{{ range $i, $t := . }}{{ if $i }} Â· {{ end }}{{ $t }}{{ end }}</span>{{ end }}
+    {{- with .Params.original_url }}<span>Source · <a href="{{ . }}" target="_blank" rel="noopener" style="color:var(--navy)">wsj.com ↗</a></span>{{ end }}
+    {{- with .Params.tags }}<span>{{ range $i, $t := . }}{{ if $i }} · {{ end }}{{ $t }}{{ end }}</span>{{ end }}
   </div>
 </header>
 {{- end }}
@@ -170,13 +170,13 @@
 
 <nav class="nav-bottom">
   {{- with .PrevInSection }}<a href="{{ .RelPermalink }}" class="prev">{{ .Date.Format "02 Jan" }}</a>{{ else }}<span></span>{{ end }}
-  <a href="{{ "/wsj/" | relURL }}" class="home">WSJ Â· Archive</a>
+  <a href="{{ "/wsj/" | relURL }}" class="home">WSJ · Archive</a>
   {{- with .NextInSection }}<a href="{{ .RelPermalink }}" class="next">{{ .Date.Format "02 Jan" }}</a>{{ else }}<span></span>{{ end }}
 </nav>
 
 <div class="footer">
-  <span>Â© MMXXVI Bolgheri</span>
-  <span>Source Â· Wall Street Journal Â· wsj.com</span>
+  <span>© MMXXVI Bolgheri</span>
+  <span>Source · Wall Street Journal · wsj.com</span>
 </div>
 
 {{- partial "google_analytics.html" . -}}
