@@ -210,7 +210,7 @@
     {{- with $page.Params.hero_image -}}
       {{- $sec := $page.Section -}}
       {{- $lbl := index $labelMap $sec | default (humanize $sec) -}}
-      {{- $url := . | relURL -}}
+      {{- $url := . | absURL -}}
       {{- $heroPool = $heroPool | append (dict "url" $url "title" $page.Title "link" $page.RelPermalink "section" $lbl "date" ($page.Date.Format "02 Jan 2006")) -}}
     {{- end -}}
   {{- end -}}
@@ -241,7 +241,7 @@
       {{- with index $latest 0 }}
         {{/* Latest post exists — render with real content */}}
         <a href="{{ .RelPermalink }}" class="brief {{ $size }}">
-          <div class="thumb th-{{ $slug }}"{{ with .Params.hero_image }} style="background-image:url('{{ . }}')"{{ end }}>
+          <div class="thumb th-{{ $slug }}"{{ with .Params.hero_image }} style="background-image:url('{{ . | absURL }}')"{{ end }}>
             <span class="num"><em>N°</em> {{ $n }}</span>
             <span class="src-tag">{{ $label }}</span>
           </div>
