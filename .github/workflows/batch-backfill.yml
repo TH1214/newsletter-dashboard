@@ -6,7 +6,7 @@ on:
       date_from:
         description: 'Start date (YYYY-MM-DD)'
         required: true
-        type: strin
+        type: string
       date_to:
         description: 'End date (YYYY-MM-DD, inclusive). Leave empty for yesterday.'
         required: false
