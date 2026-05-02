@@ -217,7 +217,16 @@ def call_gemini_api(api_key: str, prompt: str,
         try:
             with urllib.request.urlopen(req) as resp:
                 result = json.loads(resp.read().decode("utf-8"))
-            text = result["candidates"][0]["content"]["parts"][0]["text"]
+            text = result.get("candidates", [{}])[0].get("content", {}).get("parts", [{"text": ""}])[0].get("text", "")
+            if not text:
+                # Gemini 2.5-flash may return empty text (safety filter / thinking mode)
+                finish_reason = result.get("candidates", [{}])[0].get("finishReason", "UNKNOWN")
+                print(f"[gemini] WARNING: empty response, finishReason={finish_reason}", file=sys.stderr)
+                if attempt < max_retries:
+                    delay = BACKOFF_DELAYS[attempt] if attempt < len(BACKOFF_DELAYS) else BACKOFF_DELAYS[-1]
+                    print(f"[gemini] Retrying in {delay}s (attempt {attempt + 1}/{max_retries})", file=sys.stderr)
+                    time.sleep(delay)
+                    continue
             print(
                 f"[gemini] OK" + (f" (retry {attempt})" if attempt > 0 else ""),
                 file=sys.stderr,
