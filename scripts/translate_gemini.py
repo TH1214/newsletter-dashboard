@@ -37,7 +37,7 @@ import urllib.error
 TRANSLATE_PROMPT_PATH = "scripts/translate_prompt.md"
 DEFAULT_ENDPOINT = "https://models.github.ai/inference"
 DEFAULT_MODEL = "openai/gpt-4o-mini"
-GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
 
 # Groq API (OpenAI 互換) — 無料枠で 14,400 req/day, 30 RPM
 GROQ_API_URL = "https://api.groq.com/openai/v1"
@@ -451,7 +451,7 @@ def main():
         )
     elif backend == "gemini":
         print(
-            f"[gemini] backend=Google Gemini API (gemini-2.0-flash) "
+            f"[gemini] backend=Google Gemini API (gemini-2.5-flash) "
             f"chunk_limit={chunk_limit} chunk_sleep={chunk_sleep_sec}s "
             f"max_retries={max_retries}",
             file=sys.stderr,
