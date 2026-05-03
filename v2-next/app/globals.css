@@ -3260,3 +3260,265 @@ body.menu-open .overlay { transform: translateY(0); }
   .wb-arch-jump-list { gap: 6px 8px; }
   .wb-arch-jump-list a { padding: 6px 9px; font-size: 10.5px; }
 }
+
+/* ==================================================================
+   HAMBURGER MENU — right-side drawer (replaces old fullscreen overlay)
+   ================================================================== */
+
+/* Hide the old fullscreen overlay (we use the new drawer instead) */
+.overlay { display: none !important; }
+
+.bm-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.42);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 95;
+}
+.bm-backdrop.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.bm-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 440px;
+  max-width: 92vw;
+  background: #ffffff;
+  z-index: 100;
+  transform: translateX(100%);
+  transition: transform 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  box-shadow: -10px 0 40px rgba(0, 0, 0, 0.12);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.bm-drawer.is-open {
+  transform: translateX(0);
+}
+
+.bm-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 26px 32px;
+  border-bottom: 1px solid #000;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 1;
+}
+.bm-logo {
+  font-family: var(--display);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #000;
+  text-decoration: none;
+}
+.bm-logo i {
+  color: #FF3B00;
+  font-style: normal;
+}
+.bm-close {
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: 8px;
+  margin: -8px;
+  color: #000;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.18s, transform 0.18s;
+}
+.bm-close:hover {
+  color: #555;
+  transform: rotate(90deg);
+}
+.bm-close:focus-visible {
+  outline: 2px solid #FF3B00;
+  outline-offset: 2px;
+}
+
+.bm-nav {
+  flex: 1;
+  padding: 28px 32px 16px;
+}
+.bm-eyebrow {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.24em;
+  font-weight: 700;
+  color: #777;
+  text-transform: uppercase;
+  margin: 0 0 10px;
+}
+.bm-eyebrow + .bm-primary,
+.bm-eyebrow + .bm-sources {
+  margin-bottom: 36px;
+}
+
+.bm-primary,
+.bm-sources {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.bm-primary li,
+.bm-sources li {
+  border-top: 1px solid #e8e8e8;
+}
+.bm-primary li:last-child,
+.bm-sources li:last-child {
+  border-bottom: 1px solid #e8e8e8;
+}
+
+/* Primary (Today / Archive) — larger, bolder */
+.bm-primary a {
+  display: grid;
+  grid-template-columns: 36px 1fr 22px;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 0;
+  text-decoration: none;
+  color: #000;
+  transition: color 0.2s, padding 0.2s;
+}
+.bm-primary a:hover {
+  color: #FF3B00;
+  padding-left: 4px;
+}
+.bm-primary .bm-num {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  font-weight: 600;
+  color: #999;
+}
+.bm-primary .bm-label {
+  font-family: var(--display);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.bm-primary .bm-arrow {
+  font-family: var(--mono);
+  font-size: 16px;
+  font-weight: 400;
+  color: #999;
+  transition: transform 0.2s, color 0.2s;
+  text-align: right;
+}
+.bm-primary a:hover .bm-arrow {
+  color: #FF3B00;
+  transform: translateX(4px);
+}
+
+/* Sources (8 News) — compact, dual-line */
+.bm-sources a {
+  display: grid;
+  grid-template-columns: 36px 1fr 22px;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 0;
+  text-decoration: none;
+  color: #000;
+  transition: color 0.2s, padding 0.2s;
+}
+.bm-sources a:hover {
+  color: #FF3B00;
+  padding-left: 4px;
+}
+.bm-sources .bm-num {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  font-weight: 600;
+  color: #999;
+}
+.bm-source-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.bm-source-eyebrow {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  font-weight: 600;
+  color: #999;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bm-source-label {
+  font-family: var(--display);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: #000;
+}
+.bm-sources .bm-arrow {
+  font-family: var(--mono);
+  font-size: 14px;
+  color: #999;
+  transition: transform 0.2s, color 0.2s;
+  text-align: right;
+}
+.bm-sources a:hover .bm-arrow {
+  color: #FF3B00;
+  transform: translateX(4px);
+}
+
+.bm-foot {
+  flex-shrink: 0;
+  padding: 22px 32px 28px;
+  border-top: 1px solid #000;
+  font-family: var(--mono);
+  background: #fff;
+}
+.bm-foot p { margin: 0; }
+.bm-foot-name {
+  font-size: 11px;
+  letter-spacing: 0.28em;
+  font-weight: 700;
+  color: #000;
+  text-transform: uppercase;
+}
+.bm-foot-tag {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: #777;
+  text-transform: uppercase;
+  margin-top: 6px !important;
+}
+.bm-foot-copy {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: #999;
+  margin-top: 14px !important;
+}
+
+/* Mobile — fullscreen drawer */
+@media (max-width: 480px) {
+  .bm-drawer { width: 100vw; max-width: 100vw; }
+  .bm-head { padding: 18px 20px; }
+  .bm-logo { font-size: 22px; }
+  .bm-nav { padding: 22px 20px 12px; }
+  .bm-eyebrow + .bm-primary,
+  .bm-eyebrow + .bm-sources { margin-bottom: 28px; }
+  .bm-primary .bm-label { font-size: 22px; }
+  .bm-source-label { font-size: 16px; }
+  .bm-source-eyebrow { font-size: 9px; }
+  .bm-foot { padding: 18px 20px 24px; }
+}
