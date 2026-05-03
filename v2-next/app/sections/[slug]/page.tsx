@@ -25,42 +25,53 @@ export default function SectionPage({
   const sec = getSectionInfo(slug);
   const arts = getArticlesBySection(slug);
   const issue = getLatestIssue();
-  const latest = arts[0];
 
   return (
     <>
       <MetaBar issue={issue} suffix={sec.label} />
       <Chrome>
         {/* SECTION HERO */}
-        <section className="sec-hero">
-          <p className="eyebrow">{sec.eyebrow}</p>
-          <h1>{sec.label}</h1>
-          {latest && (
-            <p className="deck">
-              Most recent: <Link href={`/issues/${latest.date}/${latest.slug}/`}>{latest.title.split('｜')[0].split('|')[0]}</Link> · {latest.date}
-            </p>
-          )}
-          <div className="sh-meta">
-            <span><strong>{arts.length}</strong> articles</span>
-            <span className="dot">·</span>
-            <span>Translated daily 06:00 JST</span>
+        <section className="wb-sec-hero">
+          <p className="wb-eyebrow">{sec.eyebrow}</p>
+          <h1 className="wb-h1">{sec.label}</h1>
+          <p className="wb-deck">
+            <strong>{arts.length}</strong> translated articles · Daily 06:00 JST · since 2026-04-01
+          </p>
+          <div className="wb-sec-back">
+            <Link href="/archive/">← All Sources</Link>
+            <Link href="/">Today →</Link>
           </div>
         </section>
 
-        {/* ALL ARTICLES OF THIS SECTION */}
-        <section className="sec-list">
-          <ul className="ix-rows">
-            {arts.map((a, i) => (
-              <li key={a.slug}>
-                <Link href={`/issues/${a.date}/${a.slug}/`}>
-                  <span className="ix-num">{String(arts.length - i).padStart(2, '0')}</span>
-                  <span className="ix-title">{a.title.split('｜')[0].split('|')[0]}</span>
-                  <span className="ix-src">{a.date}</span>
-                  <span className="ix-read">{a.readMinutes} min</span>
+        {/* CARD GRID — all articles in this section */}
+        <section className="wb-sec-grid-section">
+          <div className="wb-sec-grid-head">
+            <span>ALL ARTICLES</span>
+            <span className="wb-sec-grid-count">{arts.length}</span>
+          </div>
+          <div className="wb-sec-grid">
+            {arts.map((a) => {
+              const titleClean = a.title.split('｜')[0].split('|')[0];
+              return (
+                <Link
+                  key={a.slug}
+                  href={`/issues/${a.date}/${a.slug}/`}
+                  className="wb-sec-card"
+                >
+                  <div
+                    className="wb-sec-card-img"
+                    style={{ backgroundImage: `url(${a.heroImage})` }}
+                  />
+                  <p className="wb-sec-card-date">{a.date}</p>
+                  <h3 className="wb-sec-card-title">{titleClean}</h3>
+                  <p className="wb-sec-card-deck">
+                    {a.summary.length > 100 ? a.summary.slice(0, 100) + '…' : a.summary}
+                  </p>
+                  <p className="wb-sec-card-read">{a.readMinutes} MIN READ</p>
                 </Link>
-              </li>
-            ))}
-          </ul>
+              );
+            })}
+          </div>
         </section>
       </Chrome>
       <SiteFooter />

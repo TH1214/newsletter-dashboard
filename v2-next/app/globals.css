@@ -2876,3 +2876,387 @@ body.menu-open .overlay { transform: translateY(0); }
 @media (max-width: 480px) {
   .wb-grid { grid-template-columns: 1fr; gap: 36px; }
 }
+
+/* ==================================================================
+   ARCHIVE & SECTION pages — WIRED-style card grid
+   ================================================================== */
+
+/* ----- Archive hero (top of /archive/) ----- */
+.wb-arch-hero {
+  max-width: 920px;
+  margin: 80px auto 40px;
+  padding: 0 32px;
+}
+
+/* ----- Jump-to nav (anchor links to per-section blocks) ----- */
+.wb-arch-jump {
+  max-width: 1320px;
+  margin: 0 auto 56px;
+  padding: 0 32px;
+  border-top: 1px solid #000;
+  padding-top: 18px;
+}
+.wb-arch-jump-h {
+  font-family: 'Inter', sans-serif;
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  font-weight: 700;
+  color: #555;
+  text-transform: uppercase;
+  margin: 0 0 14px;
+}
+.wb-arch-jump-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+}
+.wb-arch-jump-list a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  font-family: 'Inter', 'Noto Sans JP', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: #000;
+  text-decoration: none;
+  border: 1px solid #000;
+  background: #fff;
+  transition: background 0.15s;
+}
+.wb-arch-jump-list a:hover { background: #000; color: #fff; }
+.wb-arch-jump-list a:hover .cnt { color: #fff; border-color: #fff; }
+.wb-arch-jump-list .cnt {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #777;
+  border-left: 1px solid #ddd;
+  padding-left: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ----- Per-section block on /archive/ ----- */
+.wb-arch-sec {
+  max-width: 1320px;
+  margin: 0 auto 80px;
+  padding: 0 32px;
+  scroll-margin-top: 120px;
+}
+.wb-arch-sec-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  border-top: 2px solid #000;
+  padding-top: 22px;
+  margin-bottom: 36px;
+  gap: 24px;
+}
+.wb-arch-sec-title {
+  font-family: 'Newsreader', 'Noto Serif JP', serif;
+  font-size: clamp(28px, 3vw, 40px);
+  line-height: 1.05;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #000;
+  margin: 6px 0 0;
+}
+.wb-arch-sec-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: #555;
+  white-space: nowrap;
+}
+.wb-arch-sec-meta strong { color: #000; font-size: 16px; font-weight: 700; }
+.wb-arch-sec-more {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  font-weight: 700;
+  color: #000;
+  text-transform: uppercase;
+  text-decoration: none;
+  border-bottom: 1px solid #000;
+  padding-bottom: 1px;
+}
+.wb-arch-sec-more:hover { color: #555; border-bottom-color: #555; }
+
+/* ----- Per-section card grid (3-col) ----- */
+.wb-arch-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 40px 32px;
+}
+.wb-arch-card {
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.18s ease;
+}
+.wb-arch-card:hover { transform: translateY(-3px); }
+.wb-arch-card-img {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  background-size: cover;
+  background-position: center;
+  background-color: #f3f3f3;
+  margin-bottom: 16px;
+}
+.wb-arch-card-date {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  font-weight: 600;
+  color: #777;
+  text-transform: uppercase;
+  margin: 0 0 8px;
+  font-variant-numeric: tabular-nums;
+}
+.wb-arch-card-title {
+  font-family: 'Newsreader', 'Noto Serif JP', serif;
+  font-size: 20px;
+  line-height: 1.25;
+  font-weight: 700;
+  color: #000;
+  margin: 0 0 10px;
+  letter-spacing: -0.005em;
+}
+.wb-arch-card-deck {
+  font-family: 'Inter', 'Noto Sans JP', sans-serif;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #555;
+  margin: 0;
+}
+
+.wb-arch-sec-foot {
+  margin-top: 36px;
+  padding-top: 24px;
+  border-top: 1px solid #e3e3e3;
+  text-align: center;
+}
+.wb-arch-sec-foot-cta {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.15em;
+  font-weight: 600;
+  color: #000;
+  text-transform: uppercase;
+  text-decoration: none;
+  border-bottom: 1px solid #000;
+  padding-bottom: 1px;
+}
+.wb-arch-sec-foot-cta:hover { color: #555; border-bottom-color: #555; }
+
+/* ==================================================================
+   /sections/[slug]/ — single-section archive (full card grid)
+   ================================================================== */
+.wb-sec-hero {
+  max-width: 920px;
+  margin: 80px auto 32px;
+  padding: 0 32px;
+}
+.wb-sec-back {
+  margin-top: 24px;
+  display: flex;
+  gap: 28px;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.wb-sec-back a {
+  color: #000;
+  text-decoration: none;
+  border-bottom: 1px solid #000;
+  padding-bottom: 1px;
+}
+.wb-sec-back a:hover { color: #555; border-bottom-color: #555; }
+
+.wb-sec-grid-section {
+  max-width: 1320px;
+  margin: 0 auto 80px;
+  padding: 0 32px;
+}
+.wb-sec-grid-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  border-top: 2px solid #000;
+  padding-top: 18px;
+  margin-bottom: 36px;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #000;
+}
+.wb-sec-grid-count {
+  font-size: 14px;
+  letter-spacing: 0;
+  color: #777;
+  font-variant-numeric: tabular-nums;
+}
+.wb-sec-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 48px 32px;
+}
+.wb-sec-card {
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.18s ease;
+}
+.wb-sec-card:hover { transform: translateY(-3px); }
+.wb-sec-card-img {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  background-size: cover;
+  background-position: center;
+  background-color: #f3f3f3;
+  margin-bottom: 18px;
+}
+.wb-sec-card-date {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  font-weight: 600;
+  color: #777;
+  text-transform: uppercase;
+  margin: 0 0 8px;
+  font-variant-numeric: tabular-nums;
+}
+.wb-sec-card-title {
+  font-family: 'Newsreader', 'Noto Serif JP', serif;
+  font-size: 22px;
+  line-height: 1.22;
+  font-weight: 700;
+  color: #000;
+  margin: 0 0 10px;
+  letter-spacing: -0.005em;
+}
+.wb-sec-card-deck {
+  font-family: 'Inter', 'Noto Sans JP', sans-serif;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: #444;
+  margin: 0 0 12px;
+}
+.wb-sec-card-read {
+  font-family: 'Inter', sans-serif;
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  font-weight: 600;
+  color: #999;
+  margin: auto 0 0;
+  padding-top: 6px;
+}
+
+/* ==================================================================
+   RESPONSIVE — archive + section + ALL pages mobile fixes
+   ================================================================== */
+
+/* tablet: 3-col -> 2-col */
+@media (max-width: 1024px) {
+  .wb-arch-grid,
+  .wb-sec-grid { grid-template-columns: repeat(2, 1fr); gap: 36px 24px; }
+}
+
+@media (max-width: 720px) {
+  /* archive */
+  .wb-arch-hero { margin: 48px auto 28px; padding: 0 22px; }
+  .wb-arch-jump { padding: 0 22px; margin-bottom: 40px; }
+  .wb-arch-jump-list a { font-size: 11px; padding: 6px 10px; gap: 6px; }
+  .wb-arch-sec { padding: 0 22px; margin-bottom: 56px; }
+  .wb-arch-sec-head { flex-direction: column; align-items: flex-start; gap: 12px; padding-top: 18px; margin-bottom: 24px; }
+  .wb-arch-sec-meta { gap: 12px; flex-wrap: wrap; }
+  .wb-arch-grid { grid-template-columns: 1fr; gap: 32px; }
+  .wb-arch-card-title { font-size: 19px; }
+  .wb-arch-card-deck { font-size: 13px; }
+
+  /* section */
+  .wb-sec-hero { margin: 48px auto 28px; padding: 0 22px; }
+  .wb-sec-grid-section { padding: 0 22px; margin-bottom: 56px; }
+  .wb-sec-grid { grid-template-columns: 1fr; gap: 36px; }
+  .wb-sec-card-title { font-size: 19px; }
+  .wb-sec-card-deck { font-size: 13px; }
+
+  /* TOP / Article shrinkage already covered earlier in the file */
+
+  /* SectionNav: ensure horizontal scroll, no wrap */
+  .bl-secnav {
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+  }
+  .bl-secnav::-webkit-scrollbar { display: none; }
+  .bl-secnav-link, .bl-secnav-h { flex-shrink: 0; }
+
+  /* Header: tighten paddings */
+  header.gh { padding: 12px 16px; }
+  header.gh .gh-mid { display: none; }   /* hide tagline on mobile */
+  .gh-logo { font-size: 18px; }
+
+  /* Meta bar: keep but smaller */
+  .meta-bar { font-size: 9.5px; padding: 6px 14px; flex-wrap: wrap; gap: 4px 12px; }
+  .meta-bar .left, .meta-bar .center, .meta-bar .right { white-space: nowrap; }
+
+  /* Hamburger overlay tightening */
+  .overlay-head { padding: 16px 20px; }
+  .overlay-body { padding: 24px 20px; }
+  .overlay-nav li a {
+    grid-template-columns: 38px 1fr 24px !important;
+    padding: 14px 0 !important;
+    font-size: 18px !important;
+  }
+  .overlay-nav .num { font-size: 11px !important; }
+  .overlay-foot { padding: 12px 20px; flex-direction: column; gap: 4px; align-items: flex-start; font-size: 10px; }
+  .overlay-foot .center { display: none; }
+
+  /* Footer mobile tighten (BOLGHERI LIMITED) */
+  .bl-footer { padding: 48px 20px 24px; }
+  .bl-footer-inner { grid-template-columns: 1fr; gap: 32px; margin-bottom: 40px; }
+  .bl-col-logo, .bl-col-social { padding-top: 0; }
+  .bl-h { margin: 0 0 16px; }
+  .bl-social { gap: 22px; }
+  .bl-disclaimer { font-size: 10px; line-height: 1.6; }
+  .bl-bottom-row { flex-direction: column; gap: 8px; align-items: flex-start; }
+}
+
+@media (max-width: 480px) {
+  .wb-h1 { font-size: 32px; }
+  .wb-art-h1 { font-size: 28px; }
+  .wb-art-deck, .wb-deck { font-size: 16.5px; }
+  .wb-art-body { font-size: 16px; line-height: 1.72; }
+  .wb-art-body h2 { font-size: 21px; }
+  .wb-art-body h3 { font-size: 18px; }
+  .wb-art-body blockquote { font-size: 17px; padding-left: 16px; }
+  .wb-art-body table { font-size: 12.5px; }
+  .wb-art-body th, .wb-art-body td { padding: 8px 8px; }
+
+  /* Archive Sidebar appears stacked below body on mobile already */
+  .wb-archive-side { padding-left: 0; padding-top: 22px; }
+  .wb-as-sections a { padding: 8px 0; font-size: 13.5px; }
+  .wb-as-issues a { padding: 10px 0; }
+
+  /* TOP grid */
+  .wb-grid { grid-template-columns: 1fr; gap: 32px; }
+  .wb-card-title { font-size: 19px; }
+  .wb-card-deck { font-size: 13.5px; }
+
+  /* Archive jump pills wrap nicely */
+  .wb-arch-jump-list { gap: 6px 8px; }
+  .wb-arch-jump-list a { padding: 6px 9px; font-size: 10.5px; }
+}
