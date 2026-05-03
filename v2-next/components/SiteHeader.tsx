@@ -7,7 +7,7 @@ export function SiteHeader({ onMenuClick }: { onMenuClick: () => void }) {
       <Link href="/" className="gh-logo">
         Bolgheri<i>.</i>
       </Link>
-      <span className="gh-mid">Foreign Press · Translated · Quietly</span>
+      <span className="gh-mid">Explore the World</span>
       <div className="gh-right">
         <button className="gh-search" type="button" aria-label="Search">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">

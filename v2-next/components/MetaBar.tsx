@@ -11,7 +11,7 @@ export function MetaBar({ issue, suffix }: { issue: Issue; suffix?: string }) {
         <span key={i}>{s}{i < arr.length - 1 && <span className="dot"> ● </span>}</span>
       ))}</span>
       <span className="center">{wd} · {d.getUTCDate()} {month} · 06:00 JST</span>
-      <span className="right">Translated · Indexed · Annotated</span>
+      <span className="right">Explored · Curated · Briefed</span>
     </div>
   );
 }
