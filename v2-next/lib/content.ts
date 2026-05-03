@@ -4,23 +4,14 @@ import matter from 'gray-matter';
 import { remark } from 'remark';
 import remarkGfm from 'remark-gfm';
 import remarkHtml from 'remark-html';
+import { SECTIONS, type SectionSlug } from './sections';
 
 /* ------------------------------------------------------------------
    Source-of-truth: Hugo content/ + static/images/ are bundled into
    this Next.js project under /content and /public/images/.
+   SECTIONS / SectionSlug are now defined in ./sections (pure data).
    ------------------------------------------------------------------ */
-export const SECTIONS = [
-  { slug: 'wsj',              label: 'WSJ 10-Point',      eyebrow: 'WALL STREET · BUSINESS' },
-  { slug: 'economist',        label: 'The Economist',     eyebrow: 'GLOBAL · POLICY' },
-  { slug: 'nyt-bn',           label: 'NYT Breaking News', eyebrow: 'BREAKING · WORLD' },
-  { slug: 'nyt-op',           label: 'NYT Opinion Today', eyebrow: 'OPINION · COMMENTARY' },
-  { slug: 'buysiders',        label: 'Buysiders OWS',     eyebrow: 'M&A · FINANCE' },
-  { slug: 'short-squeez',     label: 'Short Squeez OWS',  eyebrow: 'WALL STREET · GOSSIP' },
-  { slug: 'skift',            label: 'Skift Daily',       eyebrow: 'TRAVEL · HOSPITALITY' },
-  { slug: 'business-insider', label: 'Business Insider',  eyebrow: 'BUSINESS · TECH' },
-] as const;
-
-export type SectionSlug = (typeof SECTIONS)[number]['slug'];
+export { SECTIONS, type SectionSlug, getSectionInfo } from './sections';
 
 const CONTENT_ROOT = path.join(process.cwd(), 'content');
 
@@ -119,8 +110,4 @@ export function getAllIssues(): Issue[] {
     date: d,
     articles: getAllArticles().filter((a) => a.date === d),
   }));
-}
-
-export function getSectionInfo(slug: SectionSlug) {
-  return SECTIONS.find((s) => s.slug === slug)!;
 }

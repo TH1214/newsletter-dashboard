@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { MetaBar } from '@/components/MetaBar';
 import { Chrome } from '@/components/Chrome';
 import { SiteFooter } from '@/components/SiteFooter';
+import { ArchiveSidebar } from '@/components/ArchiveSidebar';
 import {
   getAllArticles,
   getArticleBySlug,
@@ -24,11 +25,6 @@ export default function ArticlePage({
   if (!article || !issue) return notFound();
   const sec = getSectionInfo(article.section);
 
-  // 同じ Issue から関連3件
-  const related = issue.articles
-    .filter((a) => a.slug !== article.slug)
-    .slice(0, 3);
-
   const titleClean = article.title.split('｜')[0].split('|')[0];
 
   return (
@@ -36,84 +32,67 @@ export default function ArticlePage({
       <div className="progress"><div className="bar"></div></div>
       <MetaBar issue={issue} suffix={`Article ${issue.articles.findIndex((a) => a.slug === article.slug) + 1}`} />
       <Chrome>
-        {/* ARTICLE HERO */}
-        <section className="art-hero">
-          <p className="eyebrow">{sec.eyebrow}</p>
-          <h1>{titleClean}</h1>
-          <p className="deck">{article.summary}</p>
-          <div className="byline">
-            <span>By <strong>Bolgheri AI</strong> · translated from {sec.label}</span>
-            <span className="dot">·</span>
-            <span>{article.date}</span>
-            <span className="dot">·</span>
-            <span>{article.readMinutes} min read</span>
-          </div>
-        </section>
+        {/* WIRED-style 2-column article layout */}
+        <article className="wb-art">
+          <div className="wb-art-main">
+            {/* Hero block: eyebrow + headline + deck */}
+            <p className="wb-art-eyebrow">{sec.eyebrow}</p>
+            <h1 className="wb-art-h1">{titleClean}</h1>
+            <p className="wb-art-deck">{article.summary}</p>
 
-        {/* HERO IMAGE */}
-        <div className="art-image" style={{ backgroundImage: `url(${article.heroImage})` }}></div>
+            {/* Hero image */}
+            <figure className="wb-art-figure">
+              <div
+                className="wb-art-img"
+                style={{ backgroundImage: `url(${article.heroImage})` }}
+              />
+              <figcaption className="wb-art-credit">
+                ILLUSTRATION · BOLGHERI AI
+              </figcaption>
+            </figure>
 
-        {/* INTERPRETER STRIPE */}
-        <section className="interpreter-stripe">
-          <div className="is-label"><span>Interpreter</span></div>
-          <div className="is-body">
-            <p className="is-summary">{article.summary}</p>
-            {article.tags.length > 0 && (
-              <ul className="is-tags">
-                {article.tags.map((t) => (
-                  <li key={t}><span className="dot">●</span>{t}</li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </section>
+            {/* Byline */}
+            <div className="wb-art-byline">
+              <span>By <strong>Bolgheri AI</strong></span>
+              <span className="dot">·</span>
+              <span>translated from {sec.label}</span>
+              <span className="dot">·</span>
+              <span>{article.date}</span>
+              <span className="dot">·</span>
+              <span>{article.readMinutes} min read</span>
+            </div>
 
-        {/* BODY */}
-        <article className="art-body">
-          <div className="ab-main"
-            dangerouslySetInnerHTML={{ __html: article.contentHtml }} />
-          <aside className="ab-side">
-            <p className="side-h">Source</p>
-            <p className="side-body">
-              {sec.label}<br />
-              {article.originalUrl && (
-                <a href={article.originalUrl} target="_blank" rel="noopener">View original ↗</a>
-              )}
-            </p>
-            <p className="side-h">Translated</p>
-            <p className="side-body">{article.date} 06:00 JST</p>
-            {article.tags.length > 0 && (
-              <>
-                <p className="side-h">Tags</p>
-                <ul className="side-tags">
-                  {article.tags.map((t) => (<li key={t}>{t}</li>))}
+            {/* Body */}
+            <div
+              className="wb-art-body"
+              dangerouslySetInnerHTML={{ __html: article.contentHtml }}
+            />
+
+            {/* Source footer */}
+            <div className="wb-art-source">
+              <p className="wb-as-h">Source</p>
+              <p>
+                {sec.label}
+                {article.originalUrl && (
+                  <>
+                    {' · '}
+                    <a href={article.originalUrl} target="_blank" rel="noopener">
+                      View original ↗
+                    </a>
+                  </>
+                )}
+              </p>
+              {article.tags.length > 0 && (
+                <ul className="wb-art-tags">
+                  {article.tags.map((t) => <li key={t}>#{t}</li>)}
                 </ul>
-              </>
-            )}
-          </aside>
-        </article>
+              )}
+            </div>
+          </div>
 
-        {/* RELATED */}
-        {related.length > 0 && (
-          <section className="related">
-            <div className="rel-head">
-              <h2>Also in <em>Issue {issue.number}</em></h2>
-              <span className="meta">{related.length} more from today</span>
-            </div>
-            <div className="rel-grid">
-              {related.map((a) => {
-                const sec2 = getSectionInfo(a.section);
-                return (
-                  <Link key={a.slug} href={`/issues/${issue.date}/${a.slug}/`} className="rel-card">
-                    <span className="src">{sec2.label}</span>
-                    <h3>{a.title.split('｜')[0].split('|')[0]}</h3>
-                    <span className="read">{a.readMinutes} min read · {a.date}</span>
-                  </Link>
-                );
-              })}
-            </div>
-          </section>
-        )}
+          {/* Right sidebar: Full Archive */}
+          <ArchiveSidebar excludeSlug={article.slug} />
+        </article>
       </Chrome>
       <SiteFooter />
     </>
