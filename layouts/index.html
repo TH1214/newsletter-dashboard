@@ -214,7 +214,7 @@
       {{- $heroPool = $heroPool | append (dict "url" $url "title" $page.Title "link" $page.RelPermalink "section" $lbl "date" ($page.Date.Format "02 Jan 2006")) -}}
     {{- end -}}
   {{- end -}}
-  <script id="bolgheriHeroPool" type="application/json">{{ $heroPool | jsonify }}</script>
+  <script id="bolgheriHeroPool" type="application/json">{{ $heroPool | jsonify | safeJS }}</script>
 
   {{/* --- TODAY'S EDITION (dynamic from latest per section) --- */}}
   <div class="section-head">
