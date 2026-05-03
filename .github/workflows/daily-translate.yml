@@ -182,3 +182,12 @@ jobs:
             git push
             echo "✅ Pushed ${CHANGED} file(s)"
           fi
+
+      - name: Trigger deploy.yml after content commit
+        if: success() && steps.commit.outputs.changes_pushed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.PAT_DEPLOY_TRIGGER || secrets.GITHUB_TOKEN }}
+        run: |
+          # GITHUB_TOKEN ではダメな場合に PAT_DEPLOY_TRIGGER を使う。
+          # PAT_DEPLOY_TRIGGER 未設定なら直接 deploy.yml を呼ぶ
+          gh workflow run deploy.yml --ref main || true
