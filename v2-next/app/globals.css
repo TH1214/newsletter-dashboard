@@ -2183,3 +2183,145 @@ body.menu-open .overlay { transform: translateY(0); }
   .as-rows .r-date { display: none; }
   .gf-inner { grid-template-columns: 1fr 1fr; }
 }
+
+/* ============================================================
+   BOLGHERI LIMITED — Minimal Black Footer (replaces .gf)
+   ============================================================ */
+.bl-footer {
+  background: #000000;
+  color: #BBBBBB;
+  font-family: 'Inter', -apple-system, sans-serif;
+  padding: 100px 80px 32px;
+}
+.bl-footer-inner {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 80px;
+  max-width: 1440px;
+  margin: 0 auto 80px;
+  align-items: start;
+}
+.bl-col-logo { padding-top: 4px; }
+.bl-logo {
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: 0.32em;
+  color: #BBBBBB;
+  margin: 0;
+  text-transform: uppercase;
+}
+.bl-col {
+  font-family: 'Inter', sans-serif;
+}
+.bl-h {
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0.32em;
+  color: #BBBBBB;
+  text-transform: uppercase;
+  margin: 0 0 28px;
+}
+.bl-col ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.bl-col li { padding: 6px 0; }
+.bl-col li a {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #BBBBBB;
+  text-decoration: none;
+  transition: color 400ms ease;
+}
+.bl-col li a:hover { color: #FFFFFF; }
+
+.bl-col-social { padding-top: 4px; }
+.bl-social {
+  display: flex;
+  gap: 28px;
+  align-items: center;
+}
+.bl-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #BBBBBB;
+  transition: color 400ms ease;
+  cursor: default;
+}
+.bl-icon:hover { color: #FFFFFF; }
+
+.bl-hairline {
+  border-top: 1px solid #1A1A1A;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.bl-footer-bottom {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding-top: 40px;
+}
+.bl-disclaimer {
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  line-height: 1.7;
+  letter-spacing: 0.04em;
+  color: #6A6A6A;
+  max-width: 900px;
+  margin: 0 0 40px;
+  font-weight: 300;
+}
+.bl-bottom-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+.bl-legal {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  gap: 32px;
+}
+.bl-legal li a {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #BBBBBB;
+  text-decoration: none;
+  transition: color 400ms ease;
+}
+.bl-legal li a:hover { color: #FFFFFF; }
+.bl-copy {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  color: #BBBBBB;
+  margin: 0;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .bl-footer { padding: 64px 24px 24px; }
+  .bl-footer-inner {
+    grid-template-columns: 1fr;
+    gap: 48px;
+    margin-bottom: 48px;
+  }
+  .bl-col-social .bl-social { gap: 24px; }
+  .bl-bottom-row { flex-direction: column; align-items: flex-start; gap: 20px; }
+  .bl-legal { flex-wrap: wrap; gap: 20px; }
+  .bl-disclaimer { font-size: 10px; margin-bottom: 28px; }
+}
+
+/* HIDE the OLD footer .gf if it remains anywhere */
+.gf { display: none !important; }
