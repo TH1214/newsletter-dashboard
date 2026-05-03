@@ -71,7 +71,7 @@ jobs:
             TODAY=$(date +%Y-%m-%d)
           fi
           echo "📅 Processing date: $TODAY"
-          ALL_SOURCES="wsj nyt-bn short-squeez skift buysiders nyt-op business-insider"
+          ALL_SOURCES="wsj nyt-bn short-squeez skift buysiders nyt-op business-insider economist"
 
           INPUT="${{ github.event.inputs.sources }}"
           if [ -z "$INPUT" ] || [ "$INPUT" = "all" ]; then

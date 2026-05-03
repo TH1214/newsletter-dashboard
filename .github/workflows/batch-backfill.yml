@@ -80,7 +80,7 @@ jobs:
               f.write('\n'.join(dates))
           INNER
 
-          ALL_SOURCES="wsj nyt-bn short-squeez skift buysiders nyt-op business-insider"
+          ALL_SOURCES="wsj nyt-bn short-squeez skift buysiders nyt-op business-insider economist"
           INPUT_SOURCES="${{ inputs.sources }}"
           if [ -z "$INPUT_SOURCES" ] || [ "$INPUT_SOURCES" = "all" ]; then
             SOURCES="$ALL_SOURCES"

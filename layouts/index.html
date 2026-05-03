@@ -103,6 +103,7 @@
   .th-skift{background:linear-gradient(180deg,rgba(0,0,0,.1),rgba(0,0,0,.4)),url('https://images.unsplash.com/photo-1528909514045-2fa4ac7a08ba?w=1000&q=80') center/cover}
   .th-buysiders{background:linear-gradient(180deg,rgba(245,237,224,.05),rgba(36,24,17,.2)),url('https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1000&q=80') center/cover}
   .th-business-insider{background:linear-gradient(180deg,rgba(0,0,0,.05),rgba(0,0,0,.35)),url('https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1000&q=80') center/cover}
+  .th-economist{background:linear-gradient(180deg,rgba(227,18,11,.15),rgba(15,15,15,.45)),url('https://images.unsplash.com/photo-1495020689067-958852a7765e?w=1000&q=80') center/cover}
 
   .colophon{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:56px;margin-top:100px;padding-top:40px;border-top:2.5px solid var(--ink)}
   .colophon h5{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:22px;margin-bottom:14px;color:var(--ink)}
@@ -180,6 +181,7 @@
 
   <nav class="crossbar">
     <a href="{{ "wsj/" | relURL }}">WSJ 10-Point</a>
+    <a href="{{ "economist/" | relURL }}">The Economist</a>
     <a href="{{ "nyt-bn/" | relURL }}">NYT Breaking</a>
     <a href="{{ "nyt-op/" | relURL }}">NYT Opinion</a>
     <a href="{{ "buysiders/" | relURL }}">Buysiders OWS</a>
@@ -219,18 +221,19 @@
   {{/* --- TODAY'S EDITION (dynamic from latest per section) --- */}}
   <div class="section-head">
     <h3>Today's <em>Edition</em></h3>
-    <div class="meta">Seven Dispatches · {{ now.Format "02 January 2006" }}</div>
+    <div class="meta">Eight Dispatches · {{ now.Format "02 January 2006" }}</div>
   </div>
 
   <div class="briefs">
     {{- $sections := slice
       (dict "slug" "wsj"              "label" "WSJ 10-Point"      "size" "feature" "n" "01")
-      (dict "slug" "nyt-bn"           "label" "NYT Breaking"      "size" "medium"  "n" "02")
-      (dict "slug" "nyt-op"           "label" "NYT Opinion"       "size" "small"   "n" "03")
-      (dict "slug" "buysiders"        "label" "Buysiders OWS"     "size" "small"   "n" "04")
-      (dict "slug" "short-squeez"     "label" "Short Squeez"      "size" "small"   "n" "05")
-      (dict "slug" "skift"            "label" "Skift Daily"       "size" "small"   "n" "06")
-      (dict "slug" "business-insider" "label" "Business Insider"  "size" "small"   "n" "07")
+      (dict "slug" "economist"        "label" "The Economist"     "size" "medium"  "n" "02")
+      (dict "slug" "nyt-bn"           "label" "NYT Breaking"      "size" "medium"  "n" "03")
+      (dict "slug" "nyt-op"           "label" "NYT Opinion"       "size" "small"   "n" "04")
+      (dict "slug" "buysiders"        "label" "Buysiders OWS"     "size" "small"   "n" "05")
+      (dict "slug" "short-squeez"     "label" "Short Squeez"      "size" "small"   "n" "06")
+      (dict "slug" "skift"            "label" "Skift Daily"       "size" "small"   "n" "07")
+      (dict "slug" "business-insider" "label" "Business Insider"  "size" "small"   "n" "08")
     -}}
     {{- range $sections }}
       {{- $slug := .slug }}
@@ -277,12 +280,13 @@
       <h5>Today's <em>Sources</em></h5>
       <ul>
         <li><span>WSJ 10-Point</span><span class="n">01</span></li>
-        <li><span>NYT Breaking</span><span class="n">02</span></li>
-        <li><span>NYT Opinion</span><span class="n">03</span></li>
-        <li><span>Buysiders OWS</span><span class="n">04</span></li>
-        <li><span>Short Squeez</span><span class="n">05</span></li>
-        <li><span>Skift Daily</span><span class="n">06</span></li>
-        <li><span>Business Insider</span><span class="n">07</span></li>
+        <li><span>The Economist</span><span class="n">02</span></li>
+        <li><span>NYT Breaking</span><span class="n">03</span></li>
+        <li><span>NYT Opinion</span><span class="n">04</span></li>
+        <li><span>Buysiders OWS</span><span class="n">05</span></li>
+        <li><span>Short Squeez</span><span class="n">06</span></li>
+        <li><span>Skift Daily</span><span class="n">07</span></li>
+        <li><span>Business Insider</span><span class="n">08</span></li>
       </ul>
     </div>
     <div>

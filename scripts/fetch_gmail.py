@@ -50,6 +50,12 @@ SOURCES = {
         "query": 'from:businessinsider.com subject:"Today"',
         "label": "Business Insider",
     },
+    "economist": {
+        # The Economist Today (daily, "Sat 02 May 2026 11:05") + Editor digests
+        # (Robert Guest, Edward Carr, Andrew Palmer 等の週次配信 from:noreply@e.economist.com)
+        "query": 'from:e.economist.com',
+        "label": "The Economist",
+    },
 }
 
 
