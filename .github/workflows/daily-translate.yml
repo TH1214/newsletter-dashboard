@@ -16,6 +16,20 @@ on:
         required: false
         default: ''
         type: string
+      force_overwrite:
+        description: 'Overwrite existing files (default: skip if exists)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+# 二重実行防止: 同日付の同workflowが走っている場合、新しい実行のみキュー化
+# 異なるdate_overrideは別group扱いとし、scheduledとworkflow_dispatchも分離
+concurrency:
+  group: daily-translate-${{ github.event.inputs.date_override || 'today' }}
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -70,8 +84,18 @@ jobs:
           FAILED=0
           SKIPPED=0
 
+          FORCE_OVERWRITE="${{ github.event.inputs.force_overwrite || 'false' }}"
           for SOURCE in $SOURCES; do
             echo "::group::📧 Processing $SOURCE"
+
+            # ── 冪等性チェック: 既存ファイルがあれば skip (force_overwrite=trueなら上書き) ──
+            EXISTING_FILE="content/${SOURCE}/${TODAY}.md"
+            if [ -f "$EXISTING_FILE" ] && [ "$FORCE_OVERWRITE" != "true" ]; then
+              echo "⏭️  $EXISTING_FILE already exists, skipping (set force_overwrite=true to override)"
+              SKIPPED=$((SKIPPED + 1))
+              echo "::endgroup::"
+              continue
+            fi
 
             # ── メール取得 ──
             FETCH_ARGS="$SOURCE"
