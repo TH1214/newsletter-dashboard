@@ -16,10 +16,13 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <head>
+        {/* WIRED.jp uses an all-system Helvetica/Yu Gothic stack with no web fonts,
+            plus a custom 'WiredMono' for caps labels.  We keep JetBrains Mono as a
+            fallback for the mono caps style; everything else is system-served. */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,200;6..72,300;6..72,400;6..72,500;6..72,600&display=swap"
+          href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap"
           rel="stylesheet"
         />
       </head>
