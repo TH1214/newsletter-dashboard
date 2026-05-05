@@ -39,7 +39,7 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          ALL_SOURCES="wsj nyt-bn short-squeez skift buysiders nyt-op business-insider"
+          ALL_SOURCES="nyt-bn wsj dealbook economist business-insider skift buysiders short-squeez nyt-op"
 
           INPUT="${{ github.event.inputs.sources }}"
           if [ -z "$INPUT" ] || [ "$INPUT" = "all" ]; then
