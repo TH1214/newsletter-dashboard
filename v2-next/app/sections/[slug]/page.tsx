@@ -35,7 +35,7 @@ export default function SectionPage({
           <p className="wb-eyebrow">{sec.eyebrow}</p>
           <h1 className="wb-h1">{sec.label}</h1>
           <p className="wb-deck">
-            <strong>{arts.length}</strong> translated articles · Daily 06:00 JST · since 2026-04-01
+            <strong>{arts.length}</strong> curated briefings · Daily 06:00 JST · since 2026-04-01
           </p>
           <div className="wb-sec-back">
             <Link href="/archive/">← All Sources</Link>
