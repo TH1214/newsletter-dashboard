@@ -104,6 +104,7 @@
   .th-buysiders{background:linear-gradient(180deg,rgba(245,237,224,.05),rgba(36,24,17,.2)),url('https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1000&q=80') center/cover}
   .th-business-insider{background:linear-gradient(180deg,rgba(0,0,0,.05),rgba(0,0,0,.35)),url('https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1000&q=80') center/cover}
   .th-economist{background:linear-gradient(180deg,rgba(227,18,11,.15),rgba(15,15,15,.45)),url('https://images.unsplash.com/photo-1495020689067-958852a7765e?w=1000&q=80') center/cover}
+  .th-dealbook{background:linear-gradient(180deg,rgba(201,168,106,.15),rgba(10,15,28,.55)),url('https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=1000&q=80') center/cover;background-blend-mode:multiply}
 
   .colophon{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:56px;margin-top:100px;padding-top:40px;border-top:2.5px solid var(--ink)}
   .colophon h5{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:22px;margin-bottom:14px;color:var(--ink)}
@@ -144,7 +145,7 @@
     .brief.feature .excerpt{font-size:15.5px}
     .brief h4{font-size:22px}
 
-    /* Crossbar: horizontal scroll (preserves all 7 nav items + Surprise Me) */
+    /* Crossbar: horizontal scroll (preserves all 9 nav items + Surprise Me) */
     .crossbar{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;white-space:nowrap;padding:14px 0;font-size:15px;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin:0 -20px;padding-left:20px;padding-right:20px}
     .crossbar::-webkit-scrollbar{display:none}
     .crossbar a{flex-shrink:0;padding:6px 14px;border-right:1px solid var(--rule)}
@@ -180,14 +181,15 @@
   <hr class="rule-thick">
 
   <nav class="crossbar">
-    <a href="{{ "wsj/" | relURL }}">WSJ 10-Point</a>
-    <a href="{{ "economist/" | relURL }}">The Economist</a>
     <a href="{{ "nyt-bn/" | relURL }}">NYT Breaking</a>
-    <a href="{{ "nyt-op/" | relURL }}">NYT Opinion</a>
+    <a href="{{ "wsj/" | relURL }}">WSJ 10-Point</a>
+    <a href="{{ "dealbook/" | relURL }}">NYT DealBook</a>
+    <a href="{{ "economist/" | relURL }}">The Economist</a>
+    <a href="{{ "business-insider/" | relURL }}">Business Insider</a>
+    <a href="{{ "skift/" | relURL }}">Skift Daily</a>
     <a href="{{ "buysiders/" | relURL }}">Buysiders OWS</a>
     <a href="{{ "short-squeez/" | relURL }}">Short Squeez</a>
-    <a href="{{ "skift/" | relURL }}">Skift Daily</a>
-    <a href="{{ "business-insider/" | relURL }}">Business Insider</a>
+    <a href="{{ "nyt-op/" | relURL }}">NYT Opinion</a>
     <button class="random" onclick="surpriseMe()">Surprise Me →</button>
   </nav>
 
@@ -199,14 +201,14 @@
     <div class="hero-copy">
       <div class="kicker">From the Editor</div>
       <h2>A Morning Dispatch, <em>Unhurried &amp; Curated.</em></h2>
-      <p class="lede">毎朝6時、東京から。世界で最も鋭利な7媒体のニュースレターを集め、翻訳し、一杯のコーヒーに寄り添う静かな一冊として届ける。速報を追うためではなく、速報の意味を理解するための、ゆっくりとした朝の儀式である。</p>
+      <p class="lede">毎朝6時、東京から。世界で最も鋭利な9媒体のニュースレターを集め、翻訳し、一杯のコーヒーに寄り添う静かな一冊として届ける。速報を迴うためではなく、速報の意味を理解するための、ゆっくりとした朝の儀式である。</p>
       <div class="byline">Edited by <strong>T. Hashiramoto</strong> · Tokyo Bureau · <span style="color:var(--terracotta-deep)">Vol. II</span></div>
     </div>
   </section>
 
   {{/* --- HERO POOL (built at Hugo build time from all pages with hero_image frontmatter) --- */}}
   {{- $heroPool := slice -}}
-  {{- $labelMap := dict "wsj" "WSJ 10-Point" "nyt-bn" "NYT Breaking" "nyt-op" "NYT Opinion" "buysiders" "Buysiders OWS" "short-squeez" "Short Squeez" "skift" "Skift Daily" "business-insider" "Business Insider" -}}
+  {{- $labelMap := dict "wsj" "WSJ 10-Point" "nyt-bn" "NYT Breaking" "nyt-op" "NYT Opinion" "buysiders" "Buysiders OWS" "short-squeez" "Short Squeez" "skift" "Skift Daily" "business-insider" "Business Insider" "economist" "The Economist" "dealbook" "NYT DealBook" -}}
   {{- range site.RegularPages -}}
     {{- $page := . -}}
     {{- with $page.Params.hero_image -}}
@@ -221,19 +223,20 @@
   {{/* --- TODAY'S EDITION (dynamic from latest per section) --- */}}
   <div class="section-head">
     <h3>Today's <em>Edition</em></h3>
-    <div class="meta">Eight Dispatches · {{ now.Format "02 January 2006" }}</div>
+    <div class="meta">Nine Dispatches · {{ now.Format "02 January 2006" }}</div>
   </div>
 
   <div class="briefs">
     {{- $sections := slice
-      (dict "slug" "wsj"              "label" "WSJ 10-Point"      "size" "feature" "n" "01")
-      (dict "slug" "economist"        "label" "The Economist"     "size" "medium"  "n" "02")
-      (dict "slug" "nyt-bn"           "label" "NYT Breaking"      "size" "medium"  "n" "03")
-      (dict "slug" "nyt-op"           "label" "NYT Opinion"       "size" "small"   "n" "04")
-      (dict "slug" "buysiders"        "label" "Buysiders OWS"     "size" "small"   "n" "05")
-      (dict "slug" "short-squeez"     "label" "Short Squeez"      "size" "small"   "n" "06")
-      (dict "slug" "skift"            "label" "Skift Daily"       "size" "small"   "n" "07")
-      (dict "slug" "business-insider" "label" "Business Insider"  "size" "small"   "n" "08")
+      (dict "slug" "nyt-bn"           "label" "NYT Breaking"      "size" "feature" "n" "01")
+      (dict "slug" "wsj"              "label" "WSJ 10-Point"      "size" "medium"  "n" "02")
+      (dict "slug" "dealbook"         "label" "NYT DealBook"      "size" "medium"  "n" "03")
+      (dict "slug" "economist"        "label" "The Economist"     "size" "small"   "n" "04")
+      (dict "slug" "business-insider" "label" "Business Insider"  "size" "small"   "n" "05")
+      (dict "slug" "skift"            "label" "Skift Daily"       "size" "small"   "n" "06")
+      (dict "slug" "buysiders"        "label" "Buysiders OWS"     "size" "small"   "n" "07")
+      (dict "slug" "short-squeez"     "label" "Short Squeez"      "size" "small"   "n" "08")
+      (dict "slug" "nyt-op"           "label" "NYT Opinion"       "size" "small"   "n" "09")
     -}}
     {{- range $sections }}
       {{- $slug := .slug }}
@@ -279,14 +282,15 @@
     <div>
       <h5>Today's <em>Sources</em></h5>
       <ul>
-        <li><span>WSJ 10-Point</span><span class="n">01</span></li>
-        <li><span>The Economist</span><span class="n">02</span></li>
-        <li><span>NYT Breaking</span><span class="n">03</span></li>
-        <li><span>NYT Opinion</span><span class="n">04</span></li>
-        <li><span>Buysiders OWS</span><span class="n">05</span></li>
-        <li><span>Short Squeez</span><span class="n">06</span></li>
-        <li><span>Skift Daily</span><span class="n">07</span></li>
-        <li><span>Business Insider</span><span class="n">08</span></li>
+        <li><span>NYT Breaking</span><span class="n">01</span></li>
+        <li><span>WSJ 10-Point</span><span class="n">02</span></li>
+        <li><span>NYT DealBook</span><span class="n">03</span></li>
+        <li><span>The Economist</span><span class="n">04</span></li>
+        <li><span>Business Insider</span><span class="n">05</span></li>
+        <li><span>Skift Daily</span><span class="n">06</span></li>
+        <li><span>Buysiders OWS</span><span class="n">07</span></li>
+        <li><span>Short Squeez</span><span class="n">08</span></li>
+        <li><span>NYT Opinion</span><span class="n">09</span></li>
       </ul>
     </div>
     <div>
@@ -305,14 +309,14 @@
   <div class="footer">
     <div>© MMXXVI Bolgheri · Published in Tokyo</div>
     <div class="stamp">— Poured daily, at six. —</div>
-    <div>{{ site.BaseURL | replaceRE "https?://" "" | strings.TrimSuffix "/" }}</div>
+    <div>{{ site.BaseURL | replaceRE "https:?//" "" | strings.TrimSuffix "/" }}</div>
   </div>
 
 </div>
 
 <script>
   function surpriseMe(){
-    const pages = ['wsj','nyt-bn','nyt-op','buysiders','short-squeez','skift','business-insider'];
+    const pages = ['nyt-bn','wsj','dealbook','economist','business-insider','skift','buysiders','short-squeez','nyt-op'];
     const pick = pages[Math.floor(Math.random()*pages.length)];
     window.location.href = '{{ site.BaseURL }}' + pick + '/';
   }
