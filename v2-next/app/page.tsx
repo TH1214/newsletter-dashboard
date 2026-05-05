@@ -42,7 +42,7 @@ export default function HomePage() {
         {/* WIRED-style 4-col card grid - latest 8 articles */}
         <section className="wb-grid-section">
           <div className="wb-grid-head">
-            <h2>Latest <em>Translations</em></h2>
+            <h2>Latest <em>Curations</em></h2>
             <Link href="/archive/" className="wb-grid-archive">View Archive →</Link>
           </div>
           <div className="wb-grid">

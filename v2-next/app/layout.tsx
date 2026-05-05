@@ -4,7 +4,7 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'Bolgheri — Editorial AI News Magazine',
   description:
-    '海外メディア (NYT / WSJ / FT / The Economist 等) の記事を AI が翻訳・要約・解釈して日本語読者に届ける、静謐な雑誌的プロダクト。',
+    '海外メディア (NYT / WSJ / FT / The Economist 等) の記事を AI が編集・要約・解釈して日本語読者に届ける、静謐な雑誌的プロダクト。',
   metadataBase: new URL('https://th1214.github.io/newsletter-dashboard'),
 };
 
