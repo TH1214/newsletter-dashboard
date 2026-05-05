@@ -56,6 +56,11 @@ SOURCES = {
         "query": 'from:e.economist.com',
         "label": "The Economist",
     },
+    "dealbook": {
+        # NYT DealBook (Andrew Ross Sorkin編集、毎朝配信)
+        "query": 'from:nytimes.com subject:"DealBook"',
+        "label": "NYT DealBook",
+    },
 }
 
 

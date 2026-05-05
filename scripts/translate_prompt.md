@@ -19,6 +19,8 @@ summary: "<トップ3テーマを60字以内で要約>"
 【ソース対応表】
 wsj → ソース名: WSJ The 10-Point, カテゴリ: WSJ
 nyt-bn → ソース名: NYT Breaking News, カテゴリ: NYT-BN
+dealbook → ソース名: NYT DealBook, カテゴリ: NYT-DealBook
+economist → ソース名: The Economist, カテゴリ: Economist
 short-squeez → ソース名: Short Squeez OWS, カテゴリ: Short Squeez
 skift → ソース名: Skift The Daily, カテゴリ: Skift
 buysiders → ソース名: Buysiders Deal Report, カテゴリ: Buysiders

@@ -170,6 +170,12 @@ SECTION_STYLES = {
         "abstract conceptual editorial illustration of an economic theme, "
         "geometric composition, muted editorial palette"
     ),
+    "dealbook": (
+        "editorial illustration of a Wall Street M&A or deal-making scene "
+        "(boardroom handshake, merging skyscrapers, contract pages, gavel), "
+        "deep navy and gold palette, sophisticated NYT DealBook aesthetic, "
+        "Andrew Ross Sorkin style finance reporting visual"
+    ),
     # ---- Pattern B: 洗練ライフスタイル (modern flat digital illustration) ----
     "skift": (
         "modern flat digital illustration of a travel or hospitality scene, "
