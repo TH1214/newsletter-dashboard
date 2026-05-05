@@ -32,42 +32,46 @@ outputs:
 
 menu:
   main:
-    - identifier: wsj
-      name: WSJ
-      url: /wsj/
-      weight: 10
     - identifier: nyt-bn
       name: NYT BN
       url: /nyt-bn/
+      weight: 10
+    - identifier: wsj
+      name: WSJ
+      url: /wsj/
       weight: 20
-    - identifier: short-squeez
-      name: Short Squeez
-      url: /short-squeez/
+    - identifier: dealbook
+      name: DealBook
+      url: /dealbook/
       weight: 30
-    - identifier: skift
-      name: Skift
-      url: /skift/
-      weight: 40
     - identifier: economist
       name: Economist
       url: /economist/
-      weight: 50
-    - identifier: buysiders
-      name: Buysiders
-      url: /buysiders/
-      weight: 60
-    - identifier: nyt-op
-      name: NYT OP
-      url: /nyt-op/
-      weight: 70
+      weight: 40
     - identifier: business-insider
       name: BI
       url: /business-insider/
+      weight: 50
+    - identifier: skift
+      name: Skift
+      url: /skift/
+      weight: 60
+    - identifier: buysiders
+      name: Buysiders
+      url: /buysiders/
+      weight: 70
+    - identifier: short-squeez
+      name: Short Squeez
+      url: /short-squeez/
       weight: 80
+    - identifier: nyt-op
+      name: NYT OP
+      url: /nyt-op/
+      weight: 90
     - identifier: search
       name: 🔍検索
       url: /search/
-      weight: 90
+      weight: 100
 
 taxonomies:
   tag: tags
