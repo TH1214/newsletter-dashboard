@@ -64,10 +64,10 @@ export function SiteFooter() {
       {/* Disclaimer + legal + copyright */}
       <div className="bl-footer-bottom">
         <p className="bl-disclaimer">
-          Bolgheri Limited is an independent platform for curated translations.
-          All original content and intellectual property rights belong to their
-          respective publishers (NYT, WSJ, etc.). We are not affiliated with
-          these outlets.
+          Bolgheri Limited is an independent editorial platform for curated
+          briefings. All original content and intellectual property rights
+          belong to their respective publishers (NYT, WSJ, etc.). We are not
+          affiliated with these outlets.
         </p>
         <div className="bl-bottom-row">
           <ul className="bl-legal">
