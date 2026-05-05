@@ -5,7 +5,7 @@
 export const SECTIONS = [
   { slug: 'nyt-bn',           label: 'NYT Breaking News', eyebrow: 'BREAKING · WORLD' },
   { slug: 'wsj',              label: 'WSJ 10-Point',      eyebrow: 'WALL STREET · BUSINESS' },
-  { slug: 'dealbook',         label: 'NYT DealBook',      eyebrow: 'M&A · WALL STREET' },
+  { slug: 'dealbook',         label: 'NYT DealBook',      eyebrow: 'BRIEF · WALL STREET' },
   { slug: 'economist',        label: 'The Economist',     eyebrow: 'GLOBAL · POLICY' },
   { slug: 'business-insider', label: 'Business Insider',  eyebrow: 'BUSINESS · TECH' },
   { slug: 'skift',            label: 'Skift Daily',       eyebrow: 'TRAVEL · HOSPITALITY' },
