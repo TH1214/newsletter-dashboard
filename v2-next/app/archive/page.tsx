@@ -23,8 +23,8 @@ export default function ArchivePage() {
           <p className="wb-eyebrow">ARCHIVE · ALL EDITIONS</p>
           <h1 className="wb-h1">The <em>Archive</em></h1>
           <p className="wb-deck">
-            {total} articles across {SECTIONS.length} sources, since 2026-04-01.
-            Translated daily 06:00 JST. Browse by news source below.
+            {total} briefings across {SECTIONS.length} sources, since 2026-04-01.
+            Curated daily 06:00 JST. Browse by news source below.
           </p>
         </section>
 
