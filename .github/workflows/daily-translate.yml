@@ -184,7 +184,7 @@ jobs:
           fi
 
       - name: Trigger deploy.yml after content commit
-        if: success() && steps.commit.outputs.changes_pushed == 'true'
+        if: success()
         env:
           GH_TOKEN: ${{ secrets.PAT_DEPLOY_TRIGGER || secrets.GITHUB_TOKEN }}
         run: |
