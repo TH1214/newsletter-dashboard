@@ -58,34 +58,26 @@ export function HamburgerOverlay({ open, onClose }: { open: boolean; onClose: ()
         </header>
 
         <nav className="bm-nav">
-          <p className="bm-eyebrow">Editions</p>
           <ul className="bm-primary">
             <li>
               <Link href="/" onClick={onClose}>
-                <span className="bm-num">01</span>
                 <span className="bm-label">Today</span>
                 <span className="bm-arrow">→</span>
               </Link>
             </li>
             <li>
               <Link href="/archive/" onClick={onClose}>
-                <span className="bm-num">02</span>
                 <span className="bm-label">Archive</span>
                 <span className="bm-arrow">→</span>
               </Link>
             </li>
           </ul>
 
-          <p className="bm-eyebrow">By Source</p>
           <ul className="bm-sources">
-            {SECTIONS.map((s, i) => (
+            {SECTIONS.map((s) => (
               <li key={s.slug}>
                 <Link href={`/sections/${s.slug}/`} onClick={onClose}>
-                  <span className="bm-num">{String(i + 3).padStart(2, '0')}</span>
-                  <div className="bm-source-text">
-                    <span className="bm-source-eyebrow">{s.eyebrow}</span>
-                    <span className="bm-source-label">{s.label}</span>
-                  </div>
+                  <span className="bm-label">{s.label}</span>
                   <span className="bm-arrow">→</span>
                 </Link>
               </li>
