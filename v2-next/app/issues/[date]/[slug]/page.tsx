@@ -55,7 +55,7 @@ export default function ArticlePage({
             <div className="wb-art-byline">
               <span>By <strong>Bolgheri AI</strong></span>
               <span className="dot">·</span>
-              <span>translated from {sec.label}</span>
+              <span>curated from {sec.label}</span>
               <span className="dot">·</span>
               <span>{article.date}</span>
               <span className="dot">·</span>
