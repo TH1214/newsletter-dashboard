@@ -3,14 +3,15 @@ import { SECTIONS } from '@/lib/sections';
 
 // Compact display labels for the horizontal nav (full names live in SECTIONS).
 const SHORT: Record<string, string> = {
-  'wsj': 'WSJ',
-  'economist': 'Economist',
   'nyt-bn': 'NYT Breaking',
-  'nyt-op': 'NYT Opinion',
+  'wsj': 'WSJ',
+  'dealbook': 'DealBook',
+  'economist': 'Economist',
+  'business-insider': 'Business Insider',
+  'skift': 'Skift',
   'buysiders': 'Buysiders',
   'short-squeez': 'Short Squeez',
-  'skift': 'Skift',
-  'business-insider': 'Business Insider',
+  'nyt-op': 'NYT Opinion',
 };
 
 export function SectionNav() {
