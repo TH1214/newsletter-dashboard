@@ -3464,10 +3464,11 @@ body.menu-open .overlay { transform: translateY(0); }
 
 /* ==================================================================
    MOBILE RESPONSIVE — comprehensive fixes for archive / article / section pages
+   Breakpoint: 768px (covers tablet + mobile)
    ================================================================== */
 
 /* ----- Article detail page (issues/[date]/[slug]) ----- */
-@media (max-width: 480px) {
+@media (max-width: 768px) {
   .wb-art { padding: 0 16px; margin: 32px auto 48px; }
   .wb-art-h1 { font-size: 26px; line-height: 1.18; word-break: break-word; }
   .wb-art-deck { font-size: 15.5px; line-height: 1.55; }
@@ -3498,7 +3499,7 @@ body.menu-open .overlay { transform: translateY(0); }
 }
 
 /* ----- Archive page (/archive) ----- */
-@media (max-width: 480px) {
+@media (max-width: 768px) {
   .wb-arch-hero { margin: 48px auto 32px; padding: 0 18px; }
   .wb-arch-hero .wb-h1 { font-size: 36px; }
   .wb-arch-hero .wb-deck { font-size: 14.5px; }
@@ -3521,7 +3522,7 @@ body.menu-open .overlay { transform: translateY(0); }
 }
 
 /* ----- Section page (/sections/[slug]) ----- */
-@media (max-width: 480px) {
+@media (max-width: 768px) {
   .wb-sec-hero { padding: 48px 18px 32px; }
   .wb-sec-hero .wb-h1 { font-size: 36px; line-height: 1.05; }
   .wb-sec-hero .wb-deck { font-size: 14.5px; }
@@ -3537,9 +3538,65 @@ body.menu-open .overlay { transform: translateY(0); }
 }
 
 /* ----- Body / global mobile padding ----- */
-@media (max-width: 480px) {
+@media (max-width: 768px) {
   body { -webkit-text-size-adjust: 100%; }
   .wb-h1 { word-break: break-word; }
   /* Footer disclaimer text should not overflow */
   .bl-disclaimer { font-size: 11.5px; line-height: 1.55; }
+}
+
+/* ==================================================================
+   CRITICAL MOBILE FIXES — image overflow, crossbar, viewport edge
+   ================================================================== */
+
+/* Prevent any element from overflowing the viewport horizontally */
+@media (max-width: 768px) {
+  html, body { overflow-x: hidden; }
+
+  /* Hero image / figure on article pages */
+  .wb-art-figure { width: 100%; max-width: 100%; }
+  .wb-art-img,
+  .wb-art-figure img {
+    width: 100%; max-width: 100%; height: auto; display: block;
+  }
+
+  /* Section + Archive card images shouldn't overflow */
+  .wb-arch-card-img,
+  .wb-sec-card-img {
+    width: 100%; max-width: 100%;
+  }
+
+  /* Crossbar nav (TODAY | NYT BREAKING | ...) — proper horizontal scroll */
+  .wb-crossbar,
+  nav.wb-crossbar,
+  .wb-banner-nav {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    white-space: nowrap;
+  }
+  .wb-crossbar::-webkit-scrollbar,
+  .wb-banner-nav::-webkit-scrollbar { display: none; }
+
+  /* MetaBar (top bar with VOL./ISSUE/DATE) — wrap or scale */
+  .meta-bar, .wb-meta-bar {
+    font-size: 10px !important; letter-spacing: 0.16em !important;
+  }
+}
+
+/* True mobile (≤480px) — extra-tight spacing */
+@media (max-width: 480px) {
+  .wb-art { padding: 0 14px !important; }
+  .wb-art-h1 { font-size: 22px !important; }
+  .wb-art-deck { font-size: 14.5px !important; }
+  .wb-art-body { font-size: 15px !important; }
+  .wb-art-body h2 { font-size: 17px !important; }
+  .wb-art-body h3 { font-size: 15.5px !important; }
+  .wb-arch-hero { padding: 0 14px !important; }
+  .wb-arch-hero .wb-h1 { font-size: 30px !important; }
+  .wb-arch-sec { padding: 0 14px !important; }
+  .wb-arch-jump { padding: 12px 14px 0 !important; }
+  .wb-sec-hero { padding: 32px 14px 24px !important; }
+  .wb-sec-hero .wb-h1 { font-size: 30px !important; }
+  .wb-sec-grid-section { padding: 0 14px !important; }
 }
