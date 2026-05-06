@@ -3287,7 +3287,7 @@ body.menu-open .overlay { transform: translateY(0); }
   top: 0;
   right: 0;
   bottom: 0;
-  width: 440px;
+  width: 380px;
   max-width: 92vw;
   background: #ffffff;
   z-index: 100;
@@ -3350,7 +3350,7 @@ body.menu-open .overlay { transform: translateY(0); }
 
 .bm-nav {
   flex: 1;
-  padding: 24px 32px 16px;
+  padding: 22px 24px 16px;
 }
 
 .bm-primary,
@@ -3360,14 +3360,19 @@ body.menu-open .overlay { transform: translateY(0); }
   padding: 0;
 }
 .bm-primary {
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #000;
 }
 .bm-primary li,
 .bm-sources li {
   border-top: 1px solid #e8e8e8;
 }
+.bm-primary li:first-child {
+  border-top: 0;
+}
 .bm-primary li:last-child {
-  border-bottom: 1px solid #e8e8e8;
+  border-bottom: 0;
 }
 .bm-sources li:last-child {
   border-bottom: 1px solid #e8e8e8;
@@ -3377,10 +3382,10 @@ body.menu-open .overlay { transform: translateY(0); }
 .bm-primary a,
 .bm-sources a {
   display: grid;
-  grid-template-columns: 1fr 22px;
+  grid-template-columns: 1fr 18px;
   align-items: center;
-  gap: 16px;
-  padding: 18px 0;
+  gap: 12px;
+  padding: 14px 0;
   text-decoration: none;
   color: #000;
   transition: color 0.2s, padding 0.2s;
@@ -3393,9 +3398,12 @@ body.menu-open .overlay { transform: translateY(0); }
 .bm-primary .bm-label,
 .bm-sources .bm-label {
   font-family: var(--display);
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .bm-primary .bm-arrow,
 .bm-sources .bm-arrow {
@@ -3444,14 +3452,14 @@ body.menu-open .overlay { transform: translateY(0); }
 /* Mobile — fullscreen drawer */
 @media (max-width: 480px) {
   .bm-drawer { width: 100vw; max-width: 100vw; }
-  .bm-head { padding: 18px 20px; }
+  .bm-head { padding: 16px 20px; }
   .bm-logo { font-size: 22px; }
-  .bm-nav { padding: 20px 20px 12px; }
+  .bm-nav { padding: 18px 20px 10px; }
   .bm-primary a,
-  .bm-sources a { padding: 16px 0; }
+  .bm-sources a { padding: 14px 0; gap: 10px; }
   .bm-primary .bm-label,
-  .bm-sources .bm-label { font-size: 19px; }
-  .bm-foot { padding: 18px 20px 24px; }
+  .bm-sources .bm-label { font-size: 17px; }
+  .bm-foot { padding: 16px 20px 22px; }
 }
 
 /* ==================================================================
