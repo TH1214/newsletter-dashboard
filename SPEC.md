@@ -59,7 +59,7 @@ newsletter-dashboard/
 ├── SPEC.md                          ← 本書
 ├── PUBLISH_GUIDE.md                 ← 手動Publish skill運用ガイド
 ├── config.yaml                      ← Hugo設定（theme / menu / taxonomies）
-├── content/                         ← 翻訳済み記事（Hugoがビルド対象）
+├── content/                         ← 詳細解説記事（Hugoがビルド対象）
 │   ├── wsj/<YYYY-MM-DD>.md
 │   ├── nyt-bn/<YYYY-MM-DD>.md
 │   ├── short-squeez/<YYYY-MM-DD>.md
