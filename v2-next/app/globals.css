@@ -2861,8 +2861,22 @@ body.menu-open .overlay { transform: translateY(0); }
 @media (max-width: 1080px) {
   .wb-grid { grid-template-columns: repeat(3, 1fr); }
   .wb-art {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 48px;
+  }
+  .wb-art-main {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .wb-art-main img,
+  .wb-art-main figure,
+  .wb-art-figure,
+  .wb-art-img,
+  .wb-art-body img,
+  .wb-art-body table {
+    max-width: 100%;
+    width: auto;
+    height: auto;
   }
   .wb-archive-side {
     position: static;
