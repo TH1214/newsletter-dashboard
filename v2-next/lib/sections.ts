@@ -10,7 +10,7 @@ export const SECTIONS = [
   { slug: 'business-insider', label: 'Business Insider',  eyebrow: 'BUSINESS · TECH' },
   { slug: 'skift',            label: 'Skift Daily',       eyebrow: 'TRAVEL · HOSPITALITY' },
   { slug: 'buysiders',        label: 'Buysiders OWS',     eyebrow: 'M&A · FINANCE' },
-  { slug: 'short-squeez',     label: 'Short Squeez OWS',  eyebrow: 'WALL STREET · GOSSIP' },
+  { slug: 'short-squeez',     label: 'Short Squeez OWS',  eyebrow: 'WALL STREET · INTELLIGENCE' },
   { slug: 'nyt-op',           label: 'NYT Opinion Today', eyebrow: 'OPINION · COMMENTARY' },
 ] as const;
 
