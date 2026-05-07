@@ -41,7 +41,13 @@ export function getAllArticles(): Article[] {
       const date = f.replace(/\.md$/, '');
       const raw = fs.readFileSync(path.join(dir, f), 'utf-8');
       const { data, content } = matter(raw);
-      const heroImage = (data.hero_image as string) || `/images/${sec.slug}/${date}.png`;
+      // P3 #5 (v3.2.2): WebP 優先 + PNG fallback
+      // build-time に WebP ファイルが存在すれば WebP パスを採用、無ければ PNG
+      // (deploy.yml で convert_images_to_webp.py が並列変換し WebP を生成する)
+      const pngBasename = (data.hero_image as string) || `/images/${sec.slug}/${date}.png`;
+      const webpAbsPath = path.join(process.cwd(), 'public', pngBasename.replace(/^\//, '').replace(/\.png$/, '.webp'));
+      const useWebp = fs.existsSync(webpAbsPath);
+      const heroImage = useWebp ? pngBasename.replace(/\.png$/, '.webp') : pngBasename;
       const html = String(remark().use(remarkGfm).use(remarkHtml).processSync(content));
       const wordCount = content.replace(/\s+/g, ' ').trim().length;
       const readMinutes = Math.max(2, Math.round(wordCount / 600));

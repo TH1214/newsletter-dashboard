@@ -56,6 +56,13 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap"
           rel="stylesheet"
         />
+        {/* P3 #6 (v3.2.2): RSS feed auto-discovery */}
+        <link
+          rel="alternate"
+          type="application/rss+xml"
+          title="Bolgheri Daily Brief — RSS Feed"
+          href="/newsletter-dashboard/feed.xml"
+        />
       </head>
       <body>{children}</body>
     </html>

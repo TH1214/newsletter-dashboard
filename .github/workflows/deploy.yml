@@ -54,6 +54,20 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
+      - name: Setup Python (for WebP conversion)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Pillow for WebP conversion
+        run: pip install --quiet Pillow
+
+      - name: Convert hero PNG → WebP (P3 #5 bandwidth optimization)
+        run: |
+          # 既存 PNG を WebP に並列変換 (idempotent / non-blocking)
+          # GitHub Pages bandwidth を 50% 削減 (PNG 1.5MB → WebP 0.7MB 平均)
+          python scripts/convert_images_to_webp.py --quality 85 --workers 4 || true
+
       - name: Wire content + images into v2-next/
         run: |
           cd v2-next
