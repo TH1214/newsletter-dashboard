@@ -19,3 +19,7 @@ _preview_hero_*/
 
 # Python cache
 scripts/__pycache__/
+
+# Spec docx files: human-readable summaries are kept locally / Notion only.
+# Git history is the canonical record of changes (commit messages + diffs).
+*.docx
