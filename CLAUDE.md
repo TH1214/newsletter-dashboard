@@ -1,7 +1,7 @@
 # Bolgheri Daily Brief — Claude Working Memory
 
 このファイルは Claude セッションが本リポジトリで作業する際に最初に読むべき記憶。
-最終更新: 2026-05-06
+最終更新: 2026-05-07
 
 ---
 
@@ -96,9 +96,25 @@ newsletter-dashboard/
 
 **教訓**: 「ユーザーから繰り返し同じ指摘が来る」 = 「自分の検証範囲が狭い」のシグナル。指摘箇所のスコープを拡張すべし。
 
+**2026-05-07 の事案 (Pipeline 信頼性)**: 朝6:00JST の Daily Translation #82 が 9 ソース中 8 件で Gemini API HTTP 503 を受け全滅。Backfill #10 を実行したが date_override の検索ウィンドウバグで 2/9 ソースしか取得できず、6 ソースが取り逃がし状態に。
+
+**根本原因 2 つ**:
+1. `fetch_gmail.py` の date_override モードが JST 00:00 起点 + 27 時間ウィンドウ。前日 UTC 午前〜午後 (= 前日 JST 夕方) 着の米国系ニュースレターを構造的に取り逃がす。
+2. `daily-translate.yml` / `batch-backfill.yml` の content commit が GITHUB_TOKEN による push のため `deploy.yml` の `push` trigger を起動しない (GitHub の loop 防止仕様)。`gh workflow run deploy.yml` step も PAT 未設定で空振り。
+
+**恒久対処 (commit XXXXXXX)**:
+1. `fetch_gmail.py` 検索ウィンドウを **−12h 〜 +27h (合計 39h)** に拡張。前日 JST 12:00 (= 前日 UTC 03:00) 以降の全配信を確実に捕捉。
+2. `deploy.yml` に **`workflow_run` trigger** を追加し、Daily / Batch Backfill 完了時に PAT 不要で deploy を起動。conclusion=success の条件付きで空デプロイも防止。
+
+**教訓**: 「workflow が success ステータスで終わっている」 ≠ 「業務的に成功している」。Translation 結果が 0 件でも script は exit 0 で success。本物の指標は `git diff origin/main HEAD~1..HEAD --stat` で content/ にファイル追加が起きているかをチェックすべし。
+
 ## 残課題 (v3.2 以降)
 
 v3.1 公開時点の Pending Items:
 - 内部スキル文書 10件 (`scripts/publish-skill/SKILL.md`, `scripts/README.md`)
 - 内部実装 docstring 18件 (`scripts/translate_*.py`)
 - §16法的リスク評価メモ 推奨対応 (a)(b)(c) → v4.0 検討課題
+
+v3.2 で対処済 (2026-05-07):
+- `fetch_gmail.py` 日付ウィンドウバグ → −12h 拡張で恒久対処
+- `deploy.yml` 自動 trigger 不能 → `workflow_run` 追加で恒久対処

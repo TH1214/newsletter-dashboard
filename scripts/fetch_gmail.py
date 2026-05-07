@@ -154,9 +154,14 @@ def main():
     jst = timezone(timedelta(hours=9))
 
     if date_override:
-        # 指定日の JST 00:00〜翌日 03:00 (深夜配信を含む) を検索
+        # 指定日 JST 00:00 を中心に、前 12時間 〜 後 27時間 (合計 39時間) を検索する。
+        # 旧実装 (JST 00:00 〜 +27h) では、対象日の前日 UTC 午前〜午後 (= 前日 JST 夕方〜夜)
+        # に到着した米国系ニュースレター (DealBook / WSJ / Skift / Short Squeez 等) を
+        # 取り逃がしていた (2026-05-07 incident で 8/9 ソースが no_email 判定)。
+        # window を −12h まで拡張することで、前日 JST 12:00 (= 前日 UTC 03:00) 以降の
+        # 全配信を確実に捕捉する。
         target = datetime.strptime(date_override, "%Y-%m-%d").replace(tzinfo=jst)
-        after_epoch = int(target.timestamp())
+        after_epoch = int((target - timedelta(hours=12)).timestamp())
         before_epoch = int((target + timedelta(hours=27)).timestamp())
         query = f'{config["query"]} after:{after_epoch} before:{before_epoch}'
     else:

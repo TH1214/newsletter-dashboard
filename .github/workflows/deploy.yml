@@ -8,6 +8,15 @@ on:
       - 'content/**'
       - 'static/images/**'
       - '.github/workflows/deploy.yml'
+  # GITHUB_TOKEN で行われた push は downstream workflow を起動しないため、
+  # 翻訳系ワークフロー完了後に確実に deploy をトリガーする (workflow_run は
+  # PAT 不要で GitHub-native に動作する)。
+  workflow_run:
+    workflows:
+      - "Daily Newsletter Translation"
+      - "Batch Backfill Translations"
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -26,6 +35,9 @@ defaults:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # workflow_run trigger の場合は upstream workflow が success 時のみ実行する
+    # (失敗した翻訳ジョブで空デプロイが発生するのを防ぐ)
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
