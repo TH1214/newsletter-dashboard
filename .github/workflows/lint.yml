@@ -1,0 +1,82 @@
+name: Lint
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/**'
+      - 'scripts/**'
+  pull_request:
+    paths:
+      - '.github/workflows/**'
+      - 'scripts/**'
+
+permissions:
+  contents: read
+
+jobs:
+  # ─────────────────────────────────────────────────────────────
+  # GitHub Actions YAML を actionlint で静的解析
+  # YAML 構文エラーや shell スクリプト不具合を本番反映前に検出する。
+  # P2 #10: 過去に "changes_pushed" 条件不具合 (commit 6323f14) で
+  # deploy が空振りした事案あり。Lint で早期検出する。
+  # ─────────────────────────────────────────────────────────────
+  actionlint:
+    name: Workflow YAML lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run actionlint
+        uses: reviewdog/action-actionlint@v1
+        with:
+          actionlint_flags: '-color'
+          fail_on_error: 'true'
+          reporter: 'github-pr-check'
+
+  # ─────────────────────────────────────────────────────────────
+  # Python scripts の syntax check
+  # 本番 cron で初めて syntax error が発覚する事故を防ぐ。
+  # ─────────────────────────────────────────────────────────────
+  python-syntax:
+    name: Python syntax check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Compile all .py files
+        run: |
+          set -e
+          FILES=$(find scripts/ -name '*.py' -not -path '*/__pycache__/*')
+          echo "Checking syntax for:"
+          echo "$FILES"
+          for f in $FILES; do
+            python -m py_compile "$f" || { echo "❌ Syntax error in $f"; exit 1; }
+          done
+          echo "✅ All scripts pass py_compile"
+
+      - name: Import smoke test (translate_gemini)
+        run: |
+          # 主要モジュールが import できるか確認 (実 API 呼び出しはしない)
+          python -c "
+          import importlib.util, sys
+          spec = importlib.util.spec_from_file_location('translate_gemini', 'scripts/translate_gemini.py')
+          mod = importlib.util.module_from_spec(spec)
+          # main() を呼ばずに module-level の定義のみ評価
+          try:
+              spec.loader.exec_module(mod)
+              # 主要 symbol が存在することを確認
+              assert hasattr(mod, 'BackendError'), 'BackendError class missing'
+              assert hasattr(mod, 'call_gemini_api')
+              assert hasattr(mod, 'call_groq_api')
+              assert hasattr(mod, 'call_github_models')
+              print('✅ translate_gemini.py imports cleanly with all expected symbols')
+          except SystemExit:
+              # main() に到達しないはずだが、念のため
+              print('⚠️ translate_gemini.py called sys.exit() during import')
+              sys.exit(1)
+          "

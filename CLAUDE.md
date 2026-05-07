@@ -115,6 +115,31 @@ v3.1 公開時点の Pending Items:
 - 内部実装 docstring 18件 (`scripts/translate_*.py`)
 - §16法的リスク評価メモ 推奨対応 (a)(b)(c) → v4.0 検討課題
 
-v3.2 で対処済 (2026-05-07):
+v3.2 で対処済 (2026-05-07 / Pipeline Resilience Hardening Edition):
+**Tier 1 — 信頼性 (P0)**:
 - `fetch_gmail.py` 日付ウィンドウバグ → −12h 拡張で恒久対処
 - `deploy.yml` 自動 trigger 不能 → `workflow_run` 追加で恒久対処
+- `translate_gemini.py` バックエンドフォールバックチェーン: Gemini → Groq → GitHub Models 自動切替 (BackendError 例外ベース)
+- 配信失敗時の GitHub Issue 自動作成 (translated==0 AND failed>0 で発火)
+
+**Tier 2 — 性能 (P1)**:
+- `daily-translate.yml` Matrix 並列実行 (max-parallel=3、9ソース直列→並列化で 3x 高速化)
+- 完全性検証付き idempotency check (front matter + ≥500B 両方満たさない場合は再翻訳)
+- Buysiders 等の週次配信 cadence-aware 処理 (`SKIPPED_WEEKLY` ステータス)
+- Aggregator job で per-source 結果集約 (artifacts 経由)
+
+**Tier 3 — 観測性 (P1+P2)**:
+- 本番サイトに `/status/` ページ追加 (14日分配信ヒートマップ + per-source health)
+- `actionlint` + Python `py_compile` lint workflow 新設 (本番反映前の syntax 検証)
+
+**Tier 4 — Documentation (P3)**:
+- `RUNBOOK.md` 新規作成 (障害類型別の標準対応手順、5 ケース)
+- `ARCHITECTURE.md` 新規作成 (Mermaid ダイアグラム 5 種)
+- `CHANGELOG_v3.2_2026-05-07.md` 新規作成 (v3.2 全改善項目の詳細)
+
+**残課題 (v3.3 以降)**:
+- 公式 docx (Bolgheri_Daily_Brief_仕様書_v3.2_2026-05-07.docx) はサンドボックスのディスク制約で本セッション未生成 → 次回 docx 生成セッションで対応
+- P2 #7 Email-to-date 厳密マッチング (window 拡張で当面は十分)
+- P2 #9 OIDC + Workload Identity (要 GCP プロジェクト設定)
+- 内部スキル文書 10 件 / 内部実装 docstring 18 件: 「翻訳」 → 「詳細解説」整合性
+- §16 法的リスク評価メモ 推奨対応 (a)(b)(c)

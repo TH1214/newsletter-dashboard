@@ -26,7 +26,6 @@ on:
           - 'true'
 
 # 二重実行防止: 同日付の同workflowが走っている場合、新しい実行のみキュー化
-# 異なるdate_overrideは別group扱いとし、scheduledとworkflow_dispatchも分離
 concurrency:
   group: daily-translate-${{ github.event.inputs.date_override || 'today' }}
   cancel-in-progress: false
@@ -34,26 +33,75 @@ concurrency:
 permissions:
   contents: write
   models: read
+  issues: write   # P0 #2: 失敗時に Issue を自動作成するため
 
 jobs:
+  # ─────────────────────────────────────────────────────────────
+  # Job 1: ソースの取得・翻訳を matrix 並列で実行 (最大3本同時)
+  # P1 #6: max-parallel=3 で Gemini 15 RPM 制限内に収まる安全域に
+  # ─────────────────────────────────────────────────────────────
   translate:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 25
     env:
       TZ: Asia/Tokyo
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        source:
+          - nyt-bn
+          - wsj
+          - dealbook
+          - economist
+          - business-insider
+          - skift
+          - buysiders
+          - short-squeez
+          - nyt-op
+    outputs:
+      date: ${{ steps.compute_date.outputs.date }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: recursive
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
-      - name: Fetch and translate newsletters
+      - name: Compute target date
+        id: compute_date
+        run: |
+          INPUT_DATE="${{ github.event.inputs.date_override }}"
+          if [ -n "$INPUT_DATE" ]; then
+            TODAY="$INPUT_DATE"
+          else
+            TODAY=$(date +%Y-%m-%d)
+          fi
+          echo "date=$TODAY" >> $GITHUB_OUTPUT
+          echo "📅 Processing date: $TODAY"
+
+      - name: Sources filter check
+        id: filter
+        run: |
+          INPUT="${{ github.event.inputs.sources }}"
+          SOURCE="${{ matrix.source }}"
+          if [ -z "$INPUT" ] || [ "$INPUT" = "all" ]; then
+            echo "include=true" >> $GITHUB_OUTPUT
+          elif echo "$INPUT" | tr ',' '\n' | grep -qx "$SOURCE"; then
+            echo "include=true" >> $GITHUB_OUTPUT
+          else
+            echo "include=false" >> $GITHUB_OUTPUT
+            echo "⏭️ $SOURCE not in selected sources, skipping"
+          fi
+
+      - name: Fetch and translate (single source)
+        if: steps.filter.outputs.include == 'true'
+        id: translate_step
         env:
           GMAIL_CLIENT_ID: ${{ secrets.GMAIL_CLIENT_ID }}
           GMAIL_CLIENT_SECRET: ${{ secrets.GMAIL_CLIENT_SECRET }}
@@ -63,111 +111,199 @@ jobs:
           TRANSLATION_MODEL: openai/gpt-4.1
           GITHUB_MODELS_ENDPOINT: https://models.github.ai/inference
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          SOURCE: ${{ matrix.source }}
+          TODAY: ${{ steps.compute_date.outputs.date }}
+          FORCE_OVERWRITE: ${{ github.event.inputs.force_overwrite || 'false' }}
+          INPUT_DATE: ${{ github.event.inputs.date_override }}
         run: |
-          INPUT_DATE="${{ github.event.inputs.date_override }}"
-          if [ -n "$INPUT_DATE" ]; then
-            TODAY="$INPUT_DATE"
-          else
-            TODAY=$(date +%Y-%m-%d)
-          fi
-          echo "📅 Processing date: $TODAY"
-          ALL_SOURCES="nyt-bn wsj dealbook economist business-insider skift buysiders short-squeez nyt-op"
+          set +e
 
-          INPUT="${{ github.event.inputs.sources }}"
-          if [ -z "$INPUT" ] || [ "$INPUT" = "all" ]; then
-            SOURCES="$ALL_SOURCES"
-          else
-            SOURCES=$(echo "$INPUT" | tr ',' ' ')
+          # ── P1 #5: 週次配信ソースの cadence-aware 処理 ──
+          # buysiders は 月曜 (週次) のみ配信 / 他は基本毎日。
+          # 該当しない曜日は no-email を warning ではなく info で報告 (ログノイズ削減)。
+          DOW=$(date -d "$TODAY" +%u)  # 1=Mon ... 7=Sun
+          WEEKLY_SOURCES="buysiders"
+          IS_WEEKLY="false"
+          if echo "$WEEKLY_SOURCES" | tr ' ' '\n' | grep -qx "$SOURCE"; then
+            IS_WEEKLY="true"
           fi
 
-          TRANSLATED=0
-          FAILED=0
-          SKIPPED=0
+          echo "📧 Processing $SOURCE (weekly=$IS_WEEKLY, dow=$DOW)"
 
-          FORCE_OVERWRITE="${{ github.event.inputs.force_overwrite || 'false' }}"
-          for SOURCE in $SOURCES; do
-            echo "::group::📧 Processing $SOURCE"
-
-            # ── 冪等性チェック: 既存ファイルがあれば skip (force_overwrite=trueなら上書き) ──
-            EXISTING_FILE="content/${SOURCE}/${TODAY}.md"
-            if [ -f "$EXISTING_FILE" ] && [ "$FORCE_OVERWRITE" != "true" ]; then
-              echo "⏭️  $EXISTING_FILE already exists, skipping (set force_overwrite=true to override)"
-              SKIPPED=$((SKIPPED + 1))
-              echo "::endgroup::"
-              continue
-            fi
-
-            # ── メール取得 ──
-            FETCH_ARGS="$SOURCE"
-            [ -n "$INPUT_DATE" ] && FETCH_ARGS="$SOURCE $TODAY"
-            if ! python scripts/fetch_gmail.py $FETCH_ARGS > "/tmp/email_${SOURCE}.txt" 2>/tmp/fetch_log.txt; then
-              echo "❌ Fetch failed for $SOURCE"
-              cat /tmp/fetch_log.txt
-              FAILED=$((FAILED + 1))
-              echo "::endgroup::"
-              continue
-            fi
-            cat /tmp/fetch_log.txt
-
-            if grep -q "NO_EMAIL_FOUND" "/tmp/email_${SOURCE}.txt"; then
-              echo "⏭️ No email found for $SOURCE, skipping"
-              SKIPPED=$((SKIPPED + 1))
-              echo "::endgroup::"
-              continue
-            fi
-
-            # ── Gemini で翻訳 ──
-            mkdir -p "content/${SOURCE}"
-            echo "🤖 Translating $SOURCE with Gemini..."
-
-            set +e
-            python scripts/translate_gemini.py "$SOURCE" "$TODAY" \
-              < "/tmp/email_${SOURCE}.txt" \
-              > "/tmp/translated_${SOURCE}.md" \
-              2>/tmp/claude_err.txt
-            CLAUDE_EXIT=$?
-            set -e
-
-            echo "  translate_gemini.py exit code: $CLAUDE_EXIT"
-            if [ -s /tmp/claude_err.txt ]; then
-              echo "  stderr:"
-              cat /tmp/claude_err.txt
-            fi
-
-            if [ $CLAUDE_EXIT -eq 0 ] && [ -s "/tmp/translated_${SOURCE}.md" ]; then
-              if head -1 "/tmp/translated_${SOURCE}.md" | grep -q "^---"; then
-                cp "/tmp/translated_${SOURCE}.md" "content/${SOURCE}/${TODAY}.md"
-                echo "✅ Translated $SOURCE → content/${SOURCE}/${TODAY}.md"
-                TRANSLATED=$((TRANSLATED + 1))
-
-                # ── Hero 画像生成 (Pollinations.ai / non-blocking) ──
-                echo "🎨 Generating hero image for $SOURCE..."
-                set +e
-                python scripts/generate_hero_image.py "$SOURCE" "$TODAY"
-                IMG_EXIT=$?
-                set -e
-                if [ $IMG_EXIT -eq 0 ]; then
-                  echo "🎨 ✅ Hero image generated for $SOURCE"
-                else
-                  echo "🎨 ⚠️ Hero image generation failed for $SOURCE (exit=$IMG_EXIT, non-blocking)"
-                fi
-              else
-                echo "⚠️ Output missing front matter for $SOURCE"
-                head -5 "/tmp/translated_${SOURCE}.md"
-                FAILED=$((FAILED + 1))
-              fi
+          # ── 冪等性チェック (P1 #3 完全性検証付き) ──
+          EXISTING_FILE="content/${SOURCE}/${TODAY}.md"
+          if [ -f "$EXISTING_FILE" ] && [ "$FORCE_OVERWRITE" != "true" ]; then
+            # 完全性検証: front matter があり、かつ本文が 500 文字以上の場合のみ skip
+            # (壊れた部分翻訳が「存在する」ことで再翻訳をブロックする旧バグを回避)
+            if head -1 "$EXISTING_FILE" | grep -q "^---" \
+               && [ "$(wc -c < "$EXISTING_FILE")" -gt 500 ]; then
+              echo "⏭️ $EXISTING_FILE already exists and passes integrity check, skipping"
+              echo "status=SKIPPED_EXISTS" >> $GITHUB_OUTPUT
+              exit 0
             else
-              echo "❌ Translation failed (exit=$CLAUDE_EXIT)"
-              [ -s "/tmp/translated_${SOURCE}.md" ] && head -10 "/tmp/translated_${SOURCE}.md"
-              FAILED=$((FAILED + 1))
+              echo "⚠️ $EXISTING_FILE exists but failed integrity check (size or front matter); re-translating"
             fi
+          fi
 
-            echo "::endgroup::"
+          # ── メール取得 ──
+          FETCH_ARGS="$SOURCE"
+          [ -n "$INPUT_DATE" ] && FETCH_ARGS="$SOURCE $TODAY"
+          python scripts/fetch_gmail.py $FETCH_ARGS \
+            > "/tmp/email_${SOURCE}.txt" 2>/tmp/fetch_log.txt
+          FETCH_EXIT=$?
+          cat /tmp/fetch_log.txt
+          if [ $FETCH_EXIT -ne 0 ]; then
+            echo "❌ Fetch failed for $SOURCE (exit=$FETCH_EXIT)"
+            echo "status=FAILED_FETCH" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+          if grep -q "NO_EMAIL_FOUND" "/tmp/email_${SOURCE}.txt"; then
+            if [ "$IS_WEEKLY" = "true" ]; then
+              echo "ℹ️ No email for $SOURCE on $TODAY (weekly cadence, normal)"
+              echo "status=SKIPPED_WEEKLY" >> $GITHUB_OUTPUT
+            else
+              echo "⏭️ No email found for $SOURCE on $TODAY"
+              echo "status=SKIPPED_NO_EMAIL" >> $GITHUB_OUTPUT
+            fi
+            exit 0
+          fi
+
+          # ── 翻訳 (P0 #1 fallback chain 内蔵: gemini → groq → github_models) ──
+          mkdir -p "content/${SOURCE}"
+          echo "🤖 Translating $SOURCE with fallback-enabled translator..."
+
+          python scripts/translate_gemini.py "$SOURCE" "$TODAY" \
+            < "/tmp/email_${SOURCE}.txt" \
+            > "/tmp/translated_${SOURCE}.md" \
+            2>/tmp/tr_err.txt
+          TR_EXIT=$?
+
+          echo "  translate_gemini.py exit code: $TR_EXIT"
+          if [ -s /tmp/tr_err.txt ]; then
+            echo "  stderr (last 20 lines):"
+            tail -20 /tmp/tr_err.txt
+          fi
+
+          # ── P1 #3 完全性検証: front matter + 本文 500 文字以上 ──
+          if [ $TR_EXIT -eq 0 ] && [ -s "/tmp/translated_${SOURCE}.md" ] \
+             && head -1 "/tmp/translated_${SOURCE}.md" | grep -q "^---" \
+             && [ "$(wc -c < /tmp/translated_${SOURCE}.md)" -gt 500 ]; then
+            cp "/tmp/translated_${SOURCE}.md" "content/${SOURCE}/${TODAY}.md"
+            echo "✅ Translated $SOURCE → content/${SOURCE}/${TODAY}.md"
+            echo "status=TRANSLATED" >> $GITHUB_OUTPUT
+
+            # ── Hero 画像生成 (non-blocking) ──
+            echo "🎨 Generating hero image for $SOURCE..."
+            python scripts/generate_hero_image.py "$SOURCE" "$TODAY" \
+              && echo "🎨 ✅ Hero image generated" \
+              || echo "🎨 ⚠️ Hero image failed (non-blocking)"
+          else
+            echo "❌ Translation failed or output failed integrity check (exit=$TR_EXIT)"
+            head -10 "/tmp/translated_${SOURCE}.md" 2>/dev/null || true
+            echo "status=FAILED_TRANSLATE" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: Upload source artifact
+        if: steps.filter.outputs.include == 'true' && steps.translate_step.outputs.status == 'TRANSLATED'
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-${{ matrix.source }}-${{ steps.compute_date.outputs.date }}
+          path: |
+            content/${{ matrix.source }}/${{ steps.compute_date.outputs.date }}.md
+            static/images/${{ matrix.source }}/${{ steps.compute_date.outputs.date }}.png
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Record outcome (status file for aggregator)
+        if: always()
+        run: |
+          mkdir -p /tmp/outcomes
+          STATUS="${{ steps.translate_step.outputs.status }}"
+          [ -z "$STATUS" ] && STATUS="EXCLUDED"
+          echo "${{ matrix.source }} $STATUS" > "/tmp/outcomes/${{ matrix.source }}.txt"
+
+      - name: Upload outcome artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: outcome-${{ matrix.source }}
+          path: /tmp/outcomes/${{ matrix.source }}.txt
+          retention-days: 7
+
+  # ─────────────────────────────────────────────────────────────
+  # Job 2: 全 matrix の結果を集約し、commit + push + 失敗通知
+  # P0 #2: 配信 0 件時に GitHub Issue を自動作成
+  # ─────────────────────────────────────────────────────────────
+  aggregate:
+    needs: translate
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      TZ: Asia/Tokyo
+      DATE: ${{ needs.translate.outputs.date }}
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download all source artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/artifacts
+          merge-multiple: true
+
+      - name: Apply translated artifacts to working tree
+        run: |
+          set -e
+          # 翻訳済みコンテンツを repo に適用
+          if [ -d /tmp/artifacts/content ]; then
+            cp -r /tmp/artifacts/content/. content/ 2>/dev/null || true
+          fi
+          if [ -d /tmp/artifacts/static ]; then
+            mkdir -p static/images
+            cp -r /tmp/artifacts/static/images/. static/images/ 2>/dev/null || true
+          fi
+          ls -la content/*/${DATE}.md 2>/dev/null || echo "(no new content files)"
+
+      - name: Aggregate outcomes
+        id: aggregate
+        run: |
+          set -e
+          TRANSLATED=0
+          SKIPPED=0
+          FAILED=0
+          DETAILS=""
+          for f in /tmp/artifacts/outcome-*/*.txt /tmp/artifacts/*.txt; do
+            [ -f "$f" ] || continue
+            line=$(cat "$f")
+            SOURCE=$(echo "$line" | awk '{print $1}')
+            STATUS=$(echo "$line" | awk '{print $2}')
+            DETAILS="$DETAILS\n  - $SOURCE: $STATUS"
+            case "$STATUS" in
+              TRANSLATED) TRANSLATED=$((TRANSLATED+1)) ;;
+              SKIPPED_*)  SKIPPED=$((SKIPPED+1)) ;;
+              FAILED_*)   FAILED=$((FAILED+1)) ;;
+            esac
           done
+          echo "📊 Summary for $DATE:"
+          echo "  ✅ Translated: $TRANSLATED"
+          echo "  ⏭️ Skipped: $SKIPPED"
+          echo "  ❌ Failed: $FAILED"
+          echo -e "Details:$DETAILS"
 
-          echo ""
-          echo "📊 Summary: ✅ $TRANSLATED translated, ⏭️ $SKIPPED skipped, ❌ $FAILED failed"
           echo "translated=$TRANSLATED" >> $GITHUB_OUTPUT
+          echo "skipped=$SKIPPED" >> $GITHUB_OUTPUT
+          echo "failed=$FAILED" >> $GITHUB_OUTPUT
+          echo "details<<EOF" >> $GITHUB_OUTPUT
+          echo -e "$DETAILS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Commit and push
         run: |
@@ -178,16 +314,53 @@ jobs:
             echo "No new translations or images to commit"
           else
             CHANGED=$(git diff --cached --name-only | wc -l)
-            git commit -m "Daily newsletter translation $(date +%Y-%m-%d) [${CHANGED} file(s)]"
+            git commit -m "Daily newsletter translation $DATE [${CHANGED} file(s)]"
             git push
             echo "✅ Pushed ${CHANGED} file(s)"
           fi
 
+      - name: Notify on critical failure (P0 #2)
+        # 配信 0 件 (translated=0) の場合のみ Issue を自動作成。
+        # workflow が success ステータスでも業務的には失敗 = 朝のサイト更新無し。
+        if: steps.aggregate.outputs.translated == '0' && steps.aggregate.outputs.failed != '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const date = process.env.DATE;
+            const translated = ${{ steps.aggregate.outputs.translated }};
+            const skipped = ${{ steps.aggregate.outputs.skipped }};
+            const failed = ${{ steps.aggregate.outputs.failed }};
+            const details = `${{ steps.aggregate.outputs.details }}`;
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🚨 Daily Translation Failed: ${date}`,
+              body: [
+                `Daily Newsletter Translation で重大な失敗が発生しました。`,
+                ``,
+                `**Date**: ${date}`,
+                `**Run**: [#${context.runId}](${runUrl})`,
+                `**Result**: ✅ ${translated} translated / ⏭️ ${skipped} skipped / ❌ ${failed} failed`,
+                ``,
+                `**Per-source detail**:`,
+                details,
+                ``,
+                `## 対処手順`,
+                ``,
+                `1. [Workflow logs](${runUrl}) でエラーを確認`,
+                `2. Gemini API status check: https://status.cloud.google.com/`,
+                `3. 復旧手段:`,
+                `   - 一時障害なら数時間後に **Daily Newsletter Translation** を手動 Run workflow`,
+                `   - 別途取り逃がしがある場合は **Batch Backfill Translations** で日付指定実行`,
+                `4. 復旧確認後、本 Issue を close`
+              ].join('\n'),
+              labels: ['incident', 'pipeline', 'auto-generated']
+            });
+
       - name: Trigger deploy.yml after content commit
-        if: success()
+        if: success() && steps.aggregate.outputs.translated != '0'
         env:
           GH_TOKEN: ${{ secrets.PAT_DEPLOY_TRIGGER || secrets.GITHUB_TOKEN }}
         run: |
-          # GITHUB_TOKEN ではダメな場合に PAT_DEPLOY_TRIGGER を使う。
-          # PAT_DEPLOY_TRIGGER 未設定なら直接 deploy.yml を呼ぶ
           gh workflow run deploy.yml --ref main || true

@@ -57,6 +57,20 @@ DEFAULT_MAX_RETRIES = 3
 BACKOFF_DELAYS = [15, 30, 60]
 
 
+class BackendError(Exception):
+    """バックエンド (Gemini / Groq / GitHub Models) 呼び出しの恒久的失敗を表す例外。
+
+    リトライを尽くした後でも復帰不能なエラーが起きた場合に raise する。
+    呼び出し側は次の優先度のバックエンドへフォールバックすることが期待される。
+    旧実装は sys.exit(1) で即終了していたため、フォールバックが構造的に不可能だった
+    (2026-05-07 incident で 8/9 ソースが Gemini HTTP 503 で全滅)。
+    """
+    def __init__(self, backend_name: str, message: str):
+        self.backend_name = backend_name
+        self.message = message
+        super().__init__(f"[{backend_name}] {message}")
+
+
 def call_github_models(base_url: str, token: str, model: str, prompt: str,
                        max_retries: int = DEFAULT_MAX_RETRIES) -> str:
     """GitHub Models (OpenAI 互換) を呼び出して翻訳結果を返す。
@@ -118,15 +132,17 @@ def call_github_models(base_url: str, token: str, model: str, prompt: str,
                 continue
 
             print(f"[error] GitHub Models {last_error_msg}", file=sys.stderr)
-            sys.exit(1)
+            raise BackendError("github_models", last_error_msg)
 
+        except BackendError:
+            raise
         except Exception as e:
             print(f"[error] Unexpected error: {type(e).__name__}: {e}", file=sys.stderr)
-            sys.exit(1)
+            raise BackendError("github_models", f"{type(e).__name__}: {e}")
 
-    # ここに来ることは通常無い (ループ内で return か sys.exit) が念のため
+    # ここに来ることは通常無い (ループ内で return か raise) が念のため
     print(f"[error] GitHub Models exhausted retries: {last_error_msg}", file=sys.stderr)
-    sys.exit(1)
+    raise BackendError("github_models", f"exhausted retries: {last_error_msg}")
 
 
 def call_groq_api(api_key: str, prompt: str,
@@ -186,14 +202,16 @@ def call_groq_api(api_key: str, prompt: str,
                 continue
 
             print(f"[error] Groq API {last_error_msg}", file=sys.stderr)
-            sys.exit(1)
+            raise BackendError("groq", last_error_msg)
 
+        except BackendError:
+            raise
         except Exception as e:
             print(f"[error] Unexpected error: {type(e).__name__}: {e}", file=sys.stderr)
-            sys.exit(1)
+            raise BackendError("groq", f"{type(e).__name__}: {e}")
 
     print(f"[error] Groq API exhausted retries: {last_error_msg}", file=sys.stderr)
-    sys.exit(1)
+    raise BackendError("groq", f"exhausted retries: {last_error_msg}")
 
 
 def call_gemini_api(api_key: str, prompt: str,
@@ -252,14 +270,16 @@ def call_gemini_api(api_key: str, prompt: str,
                 continue
 
             print(f"[error] Gemini API {last_error_msg}", file=sys.stderr)
-            sys.exit(1)
+            raise BackendError("gemini", last_error_msg)
 
+        except BackendError:
+            raise
         except Exception as e:
             print(f"[error] Unexpected error: {type(e).__name__}: {e}", file=sys.stderr)
-            sys.exit(1)
+            raise BackendError("gemini", f"{type(e).__name__}: {e}")
 
     print(f"[error] Gemini API exhausted retries: {last_error_msg}", file=sys.stderr)
-    sys.exit(1)
+    raise BackendError("gemini", f"exhausted retries: {last_error_msg}")
 
 
 def split_into_chunks(text: str, limit: int) -> list:
@@ -417,20 +437,31 @@ def main():
     gemini_api_key = os.environ.get("GEMINI_API_KEY")
     groq_api_key = os.environ.get("GROQ_API_KEY")
 
-    # バックエンド優先順位: Groq (高レート制限) > Gemini > GitHub Models
+    # ── フォールバックチェーン (P0 fix, 2026-05-07 incident 受け) ──
+    # 旧実装は起動時に1バックエンドを選択するだけで、失敗時のフォールバックが
+    # 構造的に存在しなかった。Gemini HTTP 503 で 8/9 ソース全滅した教訓を踏まえ、
+    # 利用可能な全バックエンドを優先順位付きリストに格納し、call_api 内で順次試行する。
+    #
+    # 優先順位の根拠:
+    #   1. Gemini (gemini-2.5-flash) - 最高品質、無料枠 1,500 RPD / 15 RPM
+    #   2. Groq (llama-3.3-70b-versatile) - 高速、無料枠 14,400 RPD / 30 RPM
+    #   3. GitHub Models (gpt-4.1) - 最終フォールバック、無料枠 50 RPD / 10 RPM
+    fallback_chain = []
+    if gemini_api_key:
+        fallback_chain.append("gemini")
     if groq_api_key:
-        backend = "groq"
-    elif gemini_api_key:
-        backend = "gemini"
-    elif token:
-        backend = "github_models"
-    else:
-        print("[error] No API key found: set GROQ_API_KEY, GEMINI_API_KEY, or GITHUB_TOKEN",
+        fallback_chain.append("groq")
+    if token:
+        fallback_chain.append("github_models")
+
+    if not fallback_chain:
+        print("[error] No API key found: set GEMINI_API_KEY, GROQ_API_KEY, or GITHUB_TOKEN",
               file=sys.stderr)
         sys.exit(1)
 
-    # 後方互換のため use_gemini を維持
-    use_gemini = (backend == "gemini")
+    # 主バックエンド (ログ表示用)
+    backend = fallback_chain[0]
+    use_gemini = (backend == "gemini")  # 後方互換
 
     model = os.environ.get("TRANSLATION_MODEL", DEFAULT_MODEL)
     base_url = os.environ.get("GITHUB_MODELS_ENDPOINT", DEFAULT_ENDPOINT)
@@ -500,13 +531,40 @@ def main():
         print(f"{backend_tag}   chunk {i}/{total}: {len(c)} chars", file=sys.stderr)
 
     def call_api(prompt: str) -> str:
-        """バックエンドに応じて Groq / Gemini / GitHub Models を呼び出す。"""
-        if backend == "groq":
-            return call_groq_api(groq_api_key, prompt, model=groq_model, max_retries=max_retries)
-        elif backend == "gemini":
-            return call_gemini_api(gemini_api_key, prompt, max_retries=max_retries)
-        else:
-            return call_github_models(base_url, token, model, prompt, max_retries=max_retries)
+        """フォールバックチェーン順にバックエンドを試行する。
+
+        前段のバックエンドが BackendError を raise した場合、次の優先度の
+        バックエンドにフォールバックする。全てのバックエンドが失敗した場合は
+        最終 BackendError を再 raise する (呼び出し側がハンドリング)。
+        """
+        last_error: BackendError | None = None
+        for idx, b in enumerate(fallback_chain):
+            try:
+                if b == "gemini":
+                    return call_gemini_api(gemini_api_key, prompt, max_retries=max_retries)
+                elif b == "groq":
+                    return call_groq_api(groq_api_key, prompt, model=groq_model,
+                                          max_retries=max_retries)
+                else:  # github_models
+                    return call_github_models(base_url, token, model, prompt,
+                                               max_retries=max_retries)
+            except BackendError as e:
+                last_error = e
+                next_b = fallback_chain[idx + 1] if idx + 1 < len(fallback_chain) else None
+                if next_b:
+                    print(
+                        f"[fallback] {b} 失敗 ({e.message[:80]}); "
+                        f"次の優先度 {next_b} へフォールバック",
+                        file=sys.stderr,
+                    )
+                else:
+                    print(
+                        f"[fallback] {b} 失敗、フォールバック先なし",
+                        file=sys.stderr,
+                    )
+        # 全バックエンド失敗 — 最終エラーを再 raise
+        assert last_error is not None
+        raise last_error
 
     # ── 単一チャンク: 従来どおりの I/O 挙動を完全維持 ──
     if total == 1:
@@ -571,4 +629,11 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except BackendError as e:
+        # 全バックエンド失敗時の最終ハンドラ。
+        # 旧実装は sys.exit(1) を関数内で直接呼んでいたが、フォールバック実装の都合上
+        # main() から伝播してくる BackendError をここで集約処理する。
+        print(f"[error] All backends exhausted. Last failure: {e}", file=sys.stderr)
+        sys.exit(1)
