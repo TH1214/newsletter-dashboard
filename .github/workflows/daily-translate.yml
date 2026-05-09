@@ -111,6 +111,7 @@ jobs:
           TRANSLATION_MODEL: openai/gpt-4.1
           GITHUB_MODELS_ENDPOINT: https://models.github.ai/inference
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
           SOURCE: ${{ matrix.source }}
           TODAY: ${{ steps.compute_date.outputs.date }}
           FORCE_OVERWRITE: ${{ github.event.inputs.force_overwrite || 'false' }}
