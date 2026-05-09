@@ -51,15 +51,15 @@ UNSPLASH_ENDPOINT = "https://api.unsplash.com/photos/random"
 
 # --- ソース別フォールバックキーワード（Gemini失敗時） ---
 FALLBACK_KEYWORDS = {
-    "wsj":              "empty trading floor dawn architecture",
-    "nyt-bn":           "city street rain reflection quiet",
-    "nyt-op":           "library window light shadow reading",
-    "short-squeez":     "wall street shadow building morning",
-    "skift":            "hotel lobby predawn golden empty",
-    "buysiders":        "boardroom aftermath city window light",
-    "business-insider": "data center corridor blue empty",
-    "economist":        "parliament building fog one light",
-    "dealbook":         "empty boardroom one glass water remaining",
+    "wsj":              "wall street finance",
+    "nyt-bn":           "new york city news",
+    "nyt-op":           "library books reading",
+    "short-squeez":     "stock market trading",
+    "skift":            "hotel lobby travel",
+    "buysiders":        "business meeting finance",
+    "business-insider": "technology startup office",
+    "economist":        "global economy politics",
+    "dealbook":        "finance deal business",
 }
 
 # --- 12層アルゴリズム システムプロンプト ---
