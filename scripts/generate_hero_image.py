@@ -279,7 +279,7 @@ Apply the 12-Layer Algorithm and output ONLY the Unsplash search keywords (3-4 w
 
 def get_unsplash_image(keywords: str, retries: int = 3) -> Optional[str]:
     """Unsplash APIから画像URLを取得"""
-    query = urllib.parse.quote(keywords)
+    query = urllib.parse.quote(keywords, safe="")
     url = (
         f"{UNSPLASH_ENDPOINT}"
         f"?query={query}"
