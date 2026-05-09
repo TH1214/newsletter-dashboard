@@ -58,7 +58,7 @@ export function getAllArticles(): Article[] {
         title: (data.title as string) || sec.label,
         summary: (data.summary as string) || '',
         tags: (data.tags as string[]) || [],
-        heroImage: '/newsletter-dashboard' + heroImage.replace(/^\/+/, '/'),
+        heroImage: heroImage.startsWith('http') ? heroImage : '/newsletter-dashboard' + heroImage.replace(/^\/+/, '/'),
         originalUrl: (data.original_url as string) || '',
         contentHtml: html,
         readMinutes,
