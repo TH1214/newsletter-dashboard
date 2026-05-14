@@ -8,6 +8,7 @@ import {
   getAllArticles,
   getSectionInfo,
 } from '@/lib/content';
+import { SECTIONS } from '@/lib/sections';
 
 export default function HomePage() {
   const issue = getLatestIssue();
@@ -73,7 +74,7 @@ export default function HomePage() {
         <section className="archive-cta">
           <div className="ac-num">{totalIssues} <span className="lbl">ISSUES</span></div>
           <div className="ac-grid">
-            <div><span className="k">Sections</span><span className="v">9</span></div>
+            <div><span className="k">Sections</span><span className="v">{SECTIONS.length}</span></div>
             <div><span className="k">Articles</span><span className="v">{totalArticles}</span></div>
             <div><span className="k">Languages</span><span className="v">EN → JP</span></div>
             <div><span className="k">Cadence</span><span className="v">Daily 06:00 JST</span></div>
