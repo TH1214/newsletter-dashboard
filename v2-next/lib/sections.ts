@@ -12,6 +12,7 @@ export const SECTIONS = [
   { slug: 'buysiders',        label: 'Buysiders OWS',     eyebrow: 'M&A · FINANCE' },
   { slug: 'short-squeez',     label: 'Short Squeez OWS',  eyebrow: 'WALL STREET · INTELLIGENCE' },
   { slug: 'nyt-op',           label: 'NYT Opinion Today', eyebrow: 'OPINION · COMMENTARY' },
+  { slug: 'cnbc',             label: 'CNBC Breaking News', eyebrow: 'BREAKING · FINANCE' },
 ] as const;
 
 export type SectionSlug = (typeof SECTIONS)[number]['slug'];

@@ -12,6 +12,7 @@ const SHORT: Record<string, string> = {
   'buysiders': 'Buysiders',
   'short-squeez': 'Short Squeez',
   'nyt-op': 'NYT Opinion',
+  'cnbc': 'CNBC',
 };
 
 export function SectionNav() {

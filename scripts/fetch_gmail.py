@@ -61,6 +61,10 @@ SOURCES = {
         "query": 'from:nytimes.com subject:"DealBook"',
         "label": "NYT DealBook",
     },
+    "cnbc": {
+        "query": 'from:breakingnews@response.cnbc.com',
+        "label": "CNBC Breaking News",
+    },
 }
 
 

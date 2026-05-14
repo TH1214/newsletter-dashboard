@@ -59,6 +59,7 @@ jobs:
           - buysiders
           - short-squeez
           - nyt-op
+          - cnbc
     outputs:
       date: ${{ steps.compute_date.outputs.date }}
     steps:
