@@ -113,7 +113,10 @@ def call_github_models(base_url: str, token: str, model: str, prompt: str,
             return text
 
         except urllib.error.HTTPError as e:
-            body = e.read().decode("utf-8", errors="replace")
+            try:
+                body = e.read().decode("utf-8", errors="replace")
+            except Exception:
+                body = ""
             try:
                 msg = json.loads(body).get("error", {}).get("message", body)
             except Exception:
@@ -184,7 +187,10 @@ def call_groq_api(api_key: str, prompt: str,
             return text
 
         except urllib.error.HTTPError as e:
-            body = e.read().decode("utf-8", errors="replace")
+            try:
+                body = e.read().decode("utf-8", errors="replace")
+            except Exception:
+                body = ""
             try:
                 msg = json.loads(body).get("error", {}).get("message", body)
             except Exception:
@@ -252,7 +258,10 @@ def call_gemini_api(api_key: str, prompt: str,
             return text
 
         except urllib.error.HTTPError as e:
-            body = e.read().decode("utf-8", errors="replace")
+            try:
+                body = e.read().decode("utf-8", errors="replace")
+            except Exception:
+                body = ""
             try:
                 msg = json.loads(body).get("error", {}).get("message", body)
             except Exception:
