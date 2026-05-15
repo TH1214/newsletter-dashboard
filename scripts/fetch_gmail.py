@@ -64,6 +64,8 @@ SOURCES = {
     "cnbc": {
         "query": 'from:breakingnews@response.cnbc.com',
         "label": "CNBC Breaking News",
+        "multi": True,   # 1日複数通届くため全件取得して結合
+        "max_results": 10,
     },
 }
 
@@ -178,8 +180,11 @@ def main():
 
     access_token = get_access_token()
 
+    is_multi = config.get("multi", False)
+    max_results = str(config.get("max_results", 1)) if is_multi else "1"
+
     # メール検索
-    results = gmail_api(access_token, "messages", {"q": query, "maxResults": "1"})
+    results = gmail_api(access_token, "messages", {"q": query, "maxResults": max_results})
     messages = results.get("messages", [])
 
     if not messages:
@@ -187,31 +192,45 @@ def main():
         print("NO_EMAIL_FOUND")
         sys.exit(0)
 
-    msg_id = messages[0]["id"]
-    print(f"[fetch] Found message: {msg_id}", file=sys.stderr)
+    print(f"[fetch] Found {len(messages)} message(s)", file=sys.stderr)
 
-    # メール本文を取得
-    msg = gmail_api(access_token, f"messages/{msg_id}", {"format": "full"})
+    if not is_multi:
+        # 通常: 1通のみ
+        msg_id = messages[0]["id"]
+        msg = gmail_api(access_token, f"messages/{msg_id}", {"format": "full"})
+        headers = {h["name"].lower(): h["value"] for h in msg["payload"]["headers"]}
+        subject = headers.get("subject", "No Subject")
+        date_str = headers.get("date", "")
+        body = decode_body(msg["payload"]) or msg.get("snippet", "")
+        print(f"EMAIL_SUBJECT: {subject}")
+        print(f"EMAIL_DATE: {date_str}")
+        print(f"EMAIL_SOURCE: {config['label']}")
+        print("EMAIL_BODY_START")
+        print(body)
+        print("EMAIL_BODY_END")
+    else:
+        # マルチメール: 全件取得して結合（最新順→古い順に並べ直す）
+        all_msgs = []
+        for m in reversed(messages):  # 古い順に並べる
+            msg = gmail_api(access_token, f"messages/{m['id']}", {"format": "full"})
+            headers = {h["name"].lower(): h["value"] for h in msg["payload"]["headers"]}
+            subj = headers.get("subject", "No Subject")
+            date_h = headers.get("date", "")
+            body = decode_body(msg["payload"]) or msg.get("snippet", "")
+            all_msgs.append((subj, date_h, body))
 
-    # ヘッダからsubjectとdateを抽出
-    headers = {h["name"].lower(): h["value"] for h in msg["payload"]["headers"]}
-    subject = headers.get("subject", "No Subject")
-    date_str = headers.get("date", "")
-
-    # 本文をデコード
-    body = decode_body(msg["payload"])
-
-    if not body:
-        print(f"[fetch] Warning: Empty body for {source}", file=sys.stderr)
-        body = msg.get("snippet", "")
-
-    # 出力
-    print(f"EMAIL_SUBJECT: {subject}")
-    print(f"EMAIL_DATE: {date_str}")
-    print(f"EMAIL_SOURCE: {config['label']}")
-    print("EMAIL_BODY_START")
-    print(body)
-    print("EMAIL_BODY_END")
+        # 代表ヘッダは最初（最古）のメール
+        subject = all_msgs[0][0]
+        date_str = all_msgs[0][1]
+        print(f"[fetch] Concatenating {len(all_msgs)} emails for {source}", file=sys.stderr)
+        print(f"EMAIL_SUBJECT: {subject}")
+        print(f"EMAIL_DATE: {date_str}")
+        print(f"EMAIL_SOURCE: {config['label']}")
+        print("EMAIL_BODY_START")
+        for i, (subj, date_h, body) in enumerate(all_msgs, 1):
+            print(f"\n=== ARTICLE {i}: {subj} ===\n")
+            print(body)
+        print("EMAIL_BODY_END")
 
 
 if __name__ == "__main__":
