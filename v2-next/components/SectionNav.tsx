@@ -13,6 +13,7 @@ const SHORT: Record<string, string> = {
   'short-squeez': 'Short Squeez',
   'nyt-op': 'NYT Opinion',
   'cnbc': 'CNBC',
+  'cnbc-squawk': 'Squawk',
 };
 
 export function SectionNav() {

@@ -28,6 +28,7 @@ buysiders → ソース名: Buysiders Deal Report, カテゴリ: Buysiders
 nyt-op → ソース名: NYT Opinion Today, カテゴリ: NYT-Opinion
 business-insider → ソース名: Business Insider, カテゴリ: Business Insider
 cnbc → ソース名: CNBC Breaking News, カテゴリ: CNBC
+cnbc-squawk → ソース名: CNBC Morning Squawk, カテゴリ: Squawk
 
 【レポート構成】
 1. 出典セクション: 「## 出典」+ 原文リンク

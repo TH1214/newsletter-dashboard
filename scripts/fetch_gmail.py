@@ -67,6 +67,10 @@ SOURCES = {
         "multi": True,   # 1日複数通届くため全件取得して結合
         "max_results": 10,
     },
+    "cnbc-squawk": {
+        "query": 'from:morningsquawk@response.cnbc.com',
+        "label": "CNBC Morning Squawk",
+    },
 }
 
 

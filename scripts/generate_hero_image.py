@@ -62,6 +62,7 @@ FALLBACK_KEYWORDS = {
     "economist":        "open city panorama blue sky",
     "dealbook":         "sunlit boardroom architecture",
     "cnbc":             "financial district morning sun",
+    "cnbc-squawk":      "bright trading floor morning light",
 }
 
 # --- 12層アルゴリズム システムプロンプト ---

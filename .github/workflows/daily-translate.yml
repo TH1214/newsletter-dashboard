@@ -60,6 +60,7 @@ jobs:
           - short-squeez
           - nyt-op
           - cnbc
+          - cnbc-squawk
     outputs:
       date: ${{ steps.compute_date.outputs.date }}
     steps:
