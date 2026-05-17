@@ -99,7 +99,7 @@ def call_github_models(base_url: str, token: str, model: str, prompt: str,
     for attempt in range(max_retries + 1):
         req = urllib.request.Request(url, data=data, headers=headers, method="POST")
         try:
-            with urllib.request.urlopen(req) as resp:
+            with urllib.request.urlopen(req, timeout=300) as resp:
                 result = json.loads(resp.read().decode("utf-8"))
 
             text = result["choices"][0]["message"]["content"]
@@ -174,7 +174,7 @@ def call_groq_api(api_key: str, prompt: str,
     for attempt in range(max_retries + 1):
         req = urllib.request.Request(url, data=data, headers=headers, method="POST")
         try:
-            with urllib.request.urlopen(req) as resp:
+            with urllib.request.urlopen(req, timeout=300) as resp:
                 result = json.loads(resp.read().decode("utf-8"))
             text = result["choices"][0]["message"]["content"]
             usage = result.get("usage", {})
@@ -239,7 +239,7 @@ def call_gemini_api(api_key: str, prompt: str,
     for attempt in range(max_retries + 1):
         req = urllib.request.Request(url, data=data, headers=headers, method="POST")
         try:
-            with urllib.request.urlopen(req) as resp:
+            with urllib.request.urlopen(req, timeout=300) as resp:
                 result = json.loads(resp.read().decode("utf-8"))
             text = result.get("candidates", [{}])[0].get("content", {}).get("parts", [{"text": ""}])[0].get("text", "")
             if not text:
