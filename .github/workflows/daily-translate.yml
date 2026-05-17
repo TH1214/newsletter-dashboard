@@ -42,7 +42,7 @@ jobs:
   # ─────────────────────────────────────────────────────────────
   translate:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 40
     env:
       TZ: Asia/Tokyo
     strategy:

@@ -65,7 +65,7 @@ SOURCES = {
         "query": 'from:breakingnews@response.cnbc.com',
         "label": "CNBC Breaking News",
         "multi": True,   # 1日複数通届くため全件取得して結合
-        "max_results": 10,
+        "max_results": 5,
     },
     "cnbc-squawk": {
         "query": 'from:morningsquawk@response.cnbc.com',
