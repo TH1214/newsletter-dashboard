@@ -64,8 +64,8 @@ SOURCES = {
     "cnbc": {
         "query": 'from:breakingnews@response.cnbc.com',
         "label": "CNBC Breaking News",
-        "multi": True,   # 1日複数通届くため全件取得して結合
-        "max_results": 3,
+        "multi": True,        # 1日複数通届くため全件取得して結合
+        "max_results": 20,    # 20通まで取得（各本文は2000字に切り詰め）
     },
     "cnbc-squawk": {
         "query": 'from:morningsquawk@response.cnbc.com',
@@ -147,6 +147,22 @@ def decode_body(payload):
     return ""
 
 
+def strip_and_truncate(text: str, max_chars: int = 2000) -> str:
+    """HTMLタグを除去し、指定文字数に切り詰める。
+    マルチメール結合時にGeminiへの入力サイズを制御するために使用。
+    20通 × 2000字 = 最大40,000字でタイムアウトなし。
+    """
+    import re as _re
+    # HTMLタグ除去
+    text = _re.sub(r'<[^>]+>', ' ', text)
+    # 連続空白を1つに
+    text = _re.sub(r'\s+', ' ', text).strip()
+    # 指定文字数で切り詰め
+    if len(text) > max_chars:
+        text = text[:max_chars] + "…"
+    return text
+
+
 def main():
     if len(sys.argv) < 2:
         print("Usage: python fetch_gmail.py <source> [YYYY-MM-DD]", file=sys.stderr)
@@ -214,19 +230,24 @@ def main():
         print("EMAIL_BODY_END")
     else:
         # マルチメール: 全件取得して結合（最新順→古い順に並べ直す）
+        # 各メール本文は2000字に切り詰め → 20通でも最大40,000字でGeminiタイムアウトなし
+        PER_EMAIL_MAX_CHARS = 2000
         all_msgs = []
         for m in reversed(messages):  # 古い順に並べる
             msg = gmail_api(access_token, f"messages/{m['id']}", {"format": "full"})
             headers = {h["name"].lower(): h["value"] for h in msg["payload"]["headers"]}
             subj = headers.get("subject", "No Subject")
             date_h = headers.get("date", "")
-            body = decode_body(msg["payload"]) or msg.get("snippet", "")
+            raw_body = decode_body(msg["payload"]) or msg.get("snippet", "")
+            body = strip_and_truncate(raw_body, PER_EMAIL_MAX_CHARS)
             all_msgs.append((subj, date_h, body))
 
         # 代表ヘッダは最初（最古）のメール
         subject = all_msgs[0][0]
         date_str = all_msgs[0][1]
-        print(f"[fetch] Concatenating {len(all_msgs)} emails for {source}", file=sys.stderr)
+        total_chars = sum(len(b) for _, _, b in all_msgs)
+        print(f"[fetch] Concatenating {len(all_msgs)} emails for {source} "
+              f"(total ~{total_chars} chars after truncation)", file=sys.stderr)
         print(f"EMAIL_SUBJECT: {subject}")
         print(f"EMAIL_DATE: {date_str}")
         print(f"EMAIL_SOURCE: {config['label']}")
