@@ -75,6 +75,15 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Restore private scripts from secrets
+        env:
+          SECRET_FETCH_GMAIL_PY: ${{ secrets.SECRET_FETCH_GMAIL_PY }}
+          SECRET_TRANSLATE_GEMINI_PY: ${{ secrets.SECRET_TRANSLATE_GEMINI_PY }}
+        run: |
+          mkdir -p scripts
+          echo "$SECRET_FETCH_GMAIL_PY" > scripts/fetch_gmail.py
+          echo "$SECRET_TRANSLATE_GEMINI_PY" > scripts/translate_gemini.py
+
       - name: Compute target date
         id: compute_date
         run: |
