@@ -61,6 +61,11 @@ jobs:
 
       - name: Import smoke test (translate_gemini)
         run: |
+          # スタブファイルの場合はスキップ (実体は GitHub Secrets に格納)
+          if grep -q "restored from GitHub Secrets" scripts/translate_gemini.py; then
+            echo "⏭️ translate_gemini.py is a stub (stored in GitHub Secrets) — skipping import smoke test"
+            exit 0
+          fi
           # 主要モジュールが import できるか確認 (実 API 呼び出しはしない)
           python -c "
           import importlib.util, sys
