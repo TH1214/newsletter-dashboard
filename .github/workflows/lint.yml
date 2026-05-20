@@ -31,8 +31,8 @@ jobs:
         uses: reviewdog/action-actionlint@v1
         with:
           actionlint_flags: '-color'
-          fail_on_error: 'true'
-          reporter: 'github-pr-check'
+          fail_level: 'error'
+          reporter: 'github-check'
 
   # ─────────────────────────────────────────────────────────────
   # Python scripts の syntax check
