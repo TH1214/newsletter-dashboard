@@ -47,7 +47,7 @@ jobs:
       TZ: Asia/Tokyo
     strategy:
       fail-fast: false
-      max-parallel: 3
+      max-parallel: 1  # github_models 10 RPM制限: 並列3だと25RPM超でcnbc-squawkが常時429→直列で8RPM以下
       matrix:
         source:
           - nyt-bn
