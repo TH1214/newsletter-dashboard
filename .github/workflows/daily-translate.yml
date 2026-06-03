@@ -117,7 +117,8 @@ jobs:
           GMAIL_CLIENT_ID: ${{ secrets.GMAIL_CLIENT_ID }}
           GMAIL_CLIENT_SECRET: ${{ secrets.GMAIL_CLIENT_SECRET }}
           GMAIL_REFRESH_TOKEN: ${{ secrets.GMAIL_REFRESH_TOKEN }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          # GROQ_API_KEY は GitHub Actions IP が Cloudflare 1010 でブロックされるため無効化
+          # 有効化すると全チャンクで 403→fallback の無駄な遅延が発生する
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TRANSLATION_MODEL: openai/gpt-4.1
           GITHUB_MODELS_ENDPOINT: https://models.github.ai/inference
