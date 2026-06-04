@@ -319,6 +319,10 @@ def get_unsplash_image(keywords: str, retries: int = 3) -> Optional[str]:
             if e.code == 403:
                 log.error("Unsplash API key invalid or rate limit exceeded")
                 return None
+            if e.code == 404:
+                # 404 = クエリに一致する写真なし。リトライしても無意味なので即返す
+                log.warning(f"Unsplash 404: no results for {keywords!r}")
+                return None
             time.sleep(5 * (attempt + 1))
         except Exception as e:
             log.warning(f"Unsplash error: {e} (attempt {attempt+1}/{retries})")
@@ -358,18 +362,37 @@ def main() -> int:
         keywords = FALLBACK_KEYWORDS.get(source, "empty room morning light architecture")
         log.info(f"Using fallback keywords: {keywords!r}")
 
-    # Step 3: Unsplash画像取得
+    # Step 3: Unsplash画像取得（段階的フォールバック）
+    # 試行順: 生成キーワード → ソース別固定キーワード → 汎用キーワード2種 → 最終保険URL
+    GENERIC_FALLBACKS = [
+        "sunlit architecture morning",
+        "bright daylight building",
+    ]
+    # 最終保険: 必ずヒットするUnsplash URL（landscape/architecture）
+    LAST_RESORT_URL = (
+        "https://images.unsplash.com/photo-1486325212027-8081e485255e"
+        "?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080"
+    )
+
     image_url = get_unsplash_image(keywords)
 
-    # Step 4: Unsplashも失敗した場合、別キーワードで再試行
     if not image_url:
-        fallback = FALLBACK_KEYWORDS.get(source, "architecture morning light empty")
-        log.warning(f"Retrying with fallback: {fallback!r}")
-        image_url = get_unsplash_image(fallback)
+        source_fallback = FALLBACK_KEYWORDS.get(source, "")
+        # 生成キーワードとソース別フォールバックが同じ場合はスキップ
+        if source_fallback and source_fallback != keywords:
+            log.warning(f"Retrying with source fallback: {source_fallback!r}")
+            image_url = get_unsplash_image(source_fallback)
 
     if not image_url:
-        log.error("Failed to get any image from Unsplash")
-        return 2
+        for gf in GENERIC_FALLBACKS:
+            log.warning(f"Retrying with generic fallback: {gf!r}")
+            image_url = get_unsplash_image(gf)
+            if image_url:
+                break
+
+    if not image_url:
+        log.warning("All Unsplash queries failed, using last-resort URL")
+        image_url = LAST_RESORT_URL
 
     # Step 5: frontmatterに注入
     inject_hero_image(md_path, image_url)
