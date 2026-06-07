@@ -61,6 +61,7 @@ jobs:
           - nyt-op
           - cnbc
           - cnbc-squawk
+          - hospitality-net
     outputs:
       date: ${{ steps.compute_date.outputs.date }}
     steps:

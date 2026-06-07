@@ -13,7 +13,8 @@ export const SECTIONS = [
   { slug: 'short-squeez',     label: 'Short Squeez OWS',  eyebrow: 'WALL STREET · INTELLIGENCE' },
   { slug: 'nyt-op',           label: 'NYT Opinion Today', eyebrow: 'OPINION · COMMENTARY' },
   { slug: 'cnbc',             label: 'CNBC Breaking News', eyebrow: 'BREAKING · FINANCE' },
-  { slug: 'cnbc-squawk',     label: 'CNBC Morning Squawk', eyebrow: 'MARKETS · MORNING BRIEF' },
+  { slug: 'cnbc-squawk',      label: 'CNBC Morning Squawk',          eyebrow: 'MARKETS · MORNING BRIEF' },
+  { slug: 'hospitality-net', label: 'Hospitality Net Daily Brief',  eyebrow: 'HOSPITALITY · REAL ESTATE' },
 ] as const;
 
 export type SectionSlug = (typeof SECTIONS)[number]['slug'];
