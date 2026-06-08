@@ -55,8 +55,15 @@ interface EventRow {
   weekday?: string;
   device_id?: string;
   is_mobile?: boolean;
+  dashboard_dwell_seconds?: number;
   estimated_external_dwell_seconds?: number;
 }
+
+/** ビルド時に生成する記事カタログ (article_id → 現行の表示情報)。過去ログのタイトル補完に使う。 */
+export type ArticleCatalog = Record<
+  string,
+  { title: string; source: string; section: string; category: string }
+>;
 
 type AuthState = 'loading' | 'signed-out' | 'denied' | 'allowed';
 
@@ -97,7 +104,40 @@ function topRows(m: Map<string, number>, n = 12) {
     .map(([label, value]) => ({ label, value }));
 }
 
-export function InterestDashboard() {
+/** イベントの表示用フィールドを解決 (カタログ補完 → イベント値 → fallback)。 */
+function resolveDisplay(r: EventRow, catalog: ArticleCatalog) {
+  const cat = (r.article_id && catalog[r.article_id]) || undefined;
+  // source/section 名を title として保存してしまった旧ログを弾く
+  const rawTitle = (r.title || '').trim();
+  const looksLikeSourceName = !!(cat && (rawTitle === cat.source || rawTitle === cat.section));
+  const title =
+    (cat?.title) ||
+    (rawTitle && !looksLikeSourceName ? rawTitle : '') ||
+    r.article_id ||
+    '(無題)';
+  return {
+    title,
+    source: cat?.source || r.source || '',
+    section: cat?.section || r.section || '',
+    category: cat?.category || r.category || '',
+  };
+}
+
+/** 滞留時間の表示文字列 (秒)。推定外部 > Dashboard > 未計測 の優先。 */
+function dwellLabel(r: EventRow): string {
+  const ext = r.estimated_external_dwell_seconds || 0;
+  const dash = r.dashboard_dwell_seconds || 0;
+  if (ext > 0) return `推定外部滞留 ${ext}秒`;
+  if (dash > 0) return `Dashboard滞留 ${dash}秒`;
+  return '滞留 未計測';
+}
+
+/** 並べ替え用: その記事の最大滞留秒数。 */
+function maxDwell(r: EventRow): number {
+  return Math.max(r.estimated_external_dwell_seconds || 0, r.dashboard_dwell_seconds || 0);
+}
+
+export function InterestDashboard({ catalog = {} }: { catalog?: ArticleCatalog }) {
   const [auth, setAuth] = useState<AuthState>('loading');
   const [user, setUser] = useState<User | null>(null);
   const [events, setEvents] = useState<EventRow[] | null>(null);
@@ -202,8 +242,9 @@ export function InterestDashboard() {
   const clicks = rows.filter((r) => r.event_type === 'article_click');
   const outbounds = rows.filter((r) => r.event_type === 'outbound_click');
 
-  const bySource = topRows(countBy(clicks, (r) => r.source));
-  const byCategory = topRows(countBy(clicks, (r) => r.category));
+  // カタログ補完済みの source/section/category で集計 (旧ログも正しく分類)
+  const bySource = topRows(countBy(clicks, (r) => resolveDisplay(r, catalog).source));
+  const byCategory = topRows(countBy(clicks, (r) => resolveDisplay(r, catalog).category));
   const byWeekday = WEEKDAYS.map((w) => ({
     label: w,
     value: clicks.filter((r) => r.weekday === w).length,
@@ -218,17 +259,18 @@ export function InterestDashboard() {
   );
 
   // セクション別クリック数 (0 件含む) → あまり読んでいないカテゴリ算出に使う
-  const secCount = countBy(clicks, (r) => r.section);
+  const secCount = countBy(clicks, (r) => resolveDisplay(r, catalog).section);
   const leastRead = SECTIONS
     .map((s) => ({ label: s.label, value: secCount.get(s.slug) || 0 }))
     .sort((a, b) => a.value - b.value)
     .slice(0, 6);
 
   const recent = clicks.slice(0, 12);
-  const longDwell = outbounds
-    .filter((r) => (r.estimated_external_dwell_seconds || 0) > 0)
-    .sort((a, b) => (b.estimated_external_dwell_seconds || 0) - (a.estimated_external_dwell_seconds || 0))
-    .slice(0, 8);
+  // 滞留時間が長い記事: Dashboard滞留 (article_click) と 推定外部滞留 (outbound) の両方を対象
+  const longDwell = [...clicks, ...outbounds]
+    .filter((r) => maxDwell(r) > 0)
+    .sort((a, b) => maxDwell(b) - maxDwell(a))
+    .slice(0, 10);
 
   return (
     <div className="il-wrap">
@@ -286,29 +328,41 @@ export function InterestDashboard() {
             <p className="il-empty">まだクリック履歴がありません。記事を開くと自動で記録されます。</p>
           ) : (
             <ul className="il-list">
-              {recent.map((r, i) => (
-                <li key={(r.article_id || '') + i}>
-                  <span className="il-src">{r.source}</span> {r.title || r.article_id}
-                  <br />
-                  <span className="il-meta">{r.issue_date} · {r.clicked_at?.slice(0, 16).replace('T', ' ')}</span>
-                </li>
-              ))}
+              {recent.map((r, i) => {
+                const d = resolveDisplay(r, catalog);
+                const time = r.clicked_at?.slice(11, 16) || '';
+                return (
+                  <li key={(r.article_id || '') + i}>
+                    <span className="il-title">{d.title}</span>
+                    <br />
+                    <span className="il-meta">
+                      <span className="il-src">{d.source}</span> · {r.issue_date} · {time} · {r.event_type} · {dwellLabel(r)}
+                    </span>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
 
         <div className="il-card il-span2">
-          <h2>推定滞留が長い記事 <span className="il-hint">外部サイト滞留の推定値（不正確・上限30分）</span></h2>
+          <h2>滞留時間が長い記事 <span className="il-hint">Dashboard滞留(秒) / 推定外部滞留(秒・推定・上限30分)</span></h2>
           {longDwell.length === 0 ? (
-            <p className="il-empty">外部リンクの滞留推定データはまだありません。</p>
+            <p className="il-empty">滞留データはまだありません。記事を開く・外部原文へ飛ぶと記録されます。</p>
           ) : (
             <ul className="il-list">
-              {longDwell.map((r, i) => (
-                <li key={(r.article_id || '') + i}>
-                  <span className="il-src">{r.source}</span> {r.title || r.article_id}
-                  <span className="il-meta"> — 約 {Math.round((r.estimated_external_dwell_seconds || 0) / 60)} 分（推定）</span>
-                </li>
-              ))}
+              {longDwell.map((r, i) => {
+                const d = resolveDisplay(r, catalog);
+                return (
+                  <li key={(r.article_id || '') + i}>
+                    <span className="il-title">{d.title}</span>
+                    <br />
+                    <span className="il-meta">
+                      <span className="il-src">{d.source}</span> · {dwellLabel(r)}
+                    </span>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>

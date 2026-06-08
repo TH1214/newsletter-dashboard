@@ -241,9 +241,71 @@ export async function recordEvent(
   }
   const ev = buildEvent(eventType, meta);
   enqueue(ev); // write-ahead
+  // article_click は、記事詳細ページの滞留計測 (ArticleDwellTracker) が
+  // 同じ doc に dashboard_dwell_seconds を追記できるよう、ref を引き継ぐ
+  if (eventType === 'article_click' && ev.article_id) {
+    try {
+      sessionStorage.setItem(
+        `il_click_ref_${ev.article_id}`,
+        JSON.stringify({ event_id: ev.event_id })
+      );
+    } catch {
+      /* ignore */
+    }
+  }
   const saved = await saveEvent(ev);
   if (saved) dequeue(ev.event_id);
   return { saved, event: ev };
+}
+
+/**
+ * 記事詳細ページで、対応する article_click の event_id を引き取る (1回限り)。
+ * 同タブ内 (list→detail の SPA 遷移) で一致したものを返し、ref は消費する。
+ */
+export function consumeClickRef(articleId: string): string | null {
+  if (typeof sessionStorage === 'undefined') return null;
+  const key = `il_click_ref_${articleId}`;
+  const raw = sessionStorage.getItem(key);
+  if (!raw) return null;
+  sessionStorage.removeItem(key);
+  try {
+    return (JSON.parse(raw).event_id as string) || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 滞留秒数を既存 doc に追記 (秒・整数・上限 EXTERNAL_DWELL_CAP_SECONDS)。
+ * オフライン/未保存時は pending queue 内の該当イベントにも反映し、再送で揃える。
+ * best-effort (滞留は副次情報)。
+ */
+export async function writeDwellSeconds(
+  eventId: string,
+  field: 'dashboard_dwell_seconds' | 'estimated_external_dwell_seconds',
+  seconds: number
+): Promise<boolean> {
+  const capped = Math.min(Math.max(0, Math.round(seconds)), EXTERNAL_DWELL_CAP_SECONDS);
+  if (capped <= 0) return false;
+  // queue 内に該当イベントがあれば値を更新 (再送時に揃う)
+  const q = getQueue();
+  const idx = q.findIndex((e) => e.event_id === eventId);
+  if (idx >= 0) {
+    q[idx] = { ...q[idx], [field]: capped };
+    writeQueue(q);
+  }
+  const fb = getFirebase();
+  if (!fb || !isAllowedUser(_currentUser)) return false;
+  try {
+    await setDoc(
+      doc(fb.db, COLLECTION, eventId),
+      { [field]: capped, synced_at: serverTimestamp() },
+      { merge: true }
+    );
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /** pending queue を自動再送する (ユーザー操作不要)。 */

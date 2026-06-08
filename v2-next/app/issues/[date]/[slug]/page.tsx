@@ -10,7 +10,8 @@ import {
   getIssue,
   getSectionInfo,
 } from '@/lib/content';
-import { outboundLinkAttrs } from '@/lib/interest/attrs';
+import { outboundLinkAttrs, resolveDisplayTitle } from '@/lib/interest/attrs';
+import { ArticleDwellTracker } from '@/components/interest/ArticleDwellTracker';
 
 export function generateStaticParams() {
   return getAllArticles().map((a) => ({ date: a.date, slug: a.slug }));
@@ -31,6 +32,18 @@ export default function ArticlePage({
   return (
     <>
       <div className="progress"><div className="bar"></div></div>
+      {/* Dashboard 滞留時間 (秒) を計測して reading_events に追記 */}
+      <ArticleDwellTracker
+        meta={{
+          article_id: article.slug,
+          title: resolveDisplayTitle(article),
+          source: sec.label,
+          section: article.section,
+          category: article.tags[0] || '',
+          issue_date: article.date,
+          article_url: `/issues/${article.date}/${article.slug}/`,
+        }}
+      />
       <MetaBar issue={issue} suffix={`Article ${issue.articles.findIndex((a) => a.slug === article.slug) + 1}`} />
       <Chrome>
         {/* WIRED-style 2-column article layout */}
@@ -82,7 +95,7 @@ export default function ArticlePage({
                       target="_blank"
                       rel="noopener"
                       {...outboundLinkAttrs(
-                        { slug: article.slug, section: article.section, date: article.date, title: article.title, tags: article.tags },
+                        { slug: article.slug, section: article.section, date: article.date, title: article.title, summary: article.summary, tags: article.tags },
                         article.originalUrl
                       )}
                     >

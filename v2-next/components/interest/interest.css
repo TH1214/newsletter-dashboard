@@ -158,6 +158,12 @@
   line-height: 1.5;
 }
 .il-list li:first-child { border-top: none; }
+.il-list .il-title {
+  font-weight: 600;
+  font-size: 13.5px;
+  color: #1a1a1a;
+  line-height: 1.45;
+}
 .il-list .il-src {
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
