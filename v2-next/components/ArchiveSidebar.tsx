@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { SECTIONS } from '@/lib/sections';
 import { getAllIssues, getSectionInfo, type Article } from '@/lib/content';
+import { articleLinkAttrs } from '@/lib/interest/attrs';
 
 interface Props {
   excludeSlug?: string;   // 現在表示中の記事を除外
@@ -40,7 +41,7 @@ export function ArchiveSidebar({ excludeSlug }: Props) {
           if (!lead) return null;
           return (
             <li key={iss.date}>
-              <Link href={`/issues/${iss.date}/${lead.slug}/`}>
+              <Link href={`/issues/${iss.date}/${lead.slug}/`} {...articleLinkAttrs(lead)}>
                 <span className="wb-as-iss-num">No.{String(iss.number).padStart(3, '0')}</span>
                 <span className="wb-as-iss-date">{iss.date}</span>
                 <span className="wb-as-iss-cnt">{iss.articles.length} articles</span>

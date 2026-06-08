@@ -10,6 +10,7 @@ import {
   getLatestIssue,
   getSectionInfo,
 } from '@/lib/content';
+import { articleLinkAttrs } from '@/lib/interest/attrs';
 
 export function generateStaticParams() {
   return SECTIONS.map((s) => ({ slug: s.slug }));
@@ -57,6 +58,7 @@ export default function SectionPage({
                   key={a.slug}
                   href={`/issues/${a.date}/${a.slug}/`}
                   className="wb-sec-card"
+                  {...articleLinkAttrs(a)}
                 >
                   <div
                     className="wb-sec-card-img"
