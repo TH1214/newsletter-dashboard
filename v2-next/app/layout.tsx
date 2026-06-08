@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { InterestLogger } from '@/components/interest/InterestLogger';
 
 export const metadata: Metadata = {
   title: {
@@ -64,7 +65,11 @@ export default function RootLayout({
           href="/newsletter-dashboard/feed.xml"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        {/* Personal Interest Log — 全ページ共通のクリック記録ランナー (renders null) */}
+        <InterestLogger />
+      </body>
     </html>
   );
 }

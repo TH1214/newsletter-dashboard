@@ -36,6 +36,10 @@ export function SectionNav() {
         <Link href="/archive/" className="bl-secnav-link bl-secnav-archive">
           Archive →
         </Link>
+        {/* 運営者本人専用の Personal Interest Dashboard 導線 */}
+        <Link href="/interest/" className="bl-secnav-link bl-secnav-archive" title="My Interest (本人専用)">
+          ★ My Interest
+        </Link>
       </div>
     </nav>
   );

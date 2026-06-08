@@ -1,0 +1,193 @@
+/* ------------------------------------------------------------------
+   My Interest Dashboard — 既存デザインを壊さない範囲の専用スタイル
+   (運営者本人専用の Personal Interest Dashboard)
+   ------------------------------------------------------------------ */
+.il-wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 48px 24px 96px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Yu Gothic', sans-serif;
+  color: #1a1a1a;
+}
+.il-head {
+  border-bottom: 2px solid #1a1a1a;
+  padding-bottom: 16px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.il-head h1 {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+.il-head .il-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #888;
+}
+.il-userline {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #666;
+  margin: 14px 0 28px;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.il-userline .il-pending {
+  background: #f1ede4;
+  border: 1px solid #d8cfbb;
+  border-radius: 999px;
+  padding: 2px 10px;
+  color: #8a6d3b;
+}
+.il-btn {
+  display: inline-block;
+  background: #1a1a1a;
+  color: #fff;
+  border: none;
+  padding: 12px 22px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  border-radius: 6px;
+}
+.il-btn:hover { background: #333; }
+.il-btn-ghost {
+  background: transparent;
+  color: #1a1a1a;
+  border: 1px solid #ccc;
+  padding: 6px 14px;
+  font-size: 11px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.il-signin {
+  text-align: center;
+  padding: 80px 20px;
+}
+.il-signin p { color: #666; margin-bottom: 24px; line-height: 1.7; }
+.il-note {
+  font-size: 12px;
+  color: #999;
+  margin-top: 18px;
+  line-height: 1.7;
+}
+.il-denied {
+  text-align: center;
+  padding: 60px 20px;
+  color: #b00;
+}
+
+.il-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 28px;
+  margin-top: 32px;
+}
+.il-card {
+  border: 1px solid #e5e0d5;
+  border-radius: 10px;
+  padding: 20px 22px;
+  background: #fcfaf5;
+}
+.il-card.il-span2 { grid-column: 1 / -1; }
+.il-card h2 {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin: 0 0 16px;
+  text-transform: uppercase;
+  color: #444;
+}
+.il-card h2 .il-hint {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: #aaa;
+  font-size: 11px;
+  margin-left: 8px;
+}
+
+.il-bar-row {
+  display: grid;
+  grid-template-columns: 130px 1fr 44px;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 9px;
+  font-size: 12.5px;
+}
+.il-bar-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #333;
+}
+.il-bar-track {
+  background: #ece6da;
+  border-radius: 4px;
+  height: 14px;
+  overflow: hidden;
+}
+.il-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #C17F5E, #9E5E42);
+  border-radius: 4px;
+}
+.il-bar-val {
+  text-align: right;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #666;
+}
+
+.il-list { list-style: none; margin: 0; padding: 0; }
+.il-list li {
+  padding: 9px 0;
+  border-top: 1px solid #eee;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.il-list li:first-child { border-top: none; }
+.il-list .il-src {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: #9E5E42;
+  text-transform: uppercase;
+}
+.il-list .il-meta { color: #999; font-size: 11px; }
+.il-empty { color: #aaa; font-size: 13px; padding: 12px 0; }
+
+.il-stats {
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+  margin: 4px 0 8px;
+}
+.il-stat .n {
+  font-size: 30px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+}
+.il-stat .k {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #999;
+}
+
+@media (max-width: 760px) {
+  .il-grid { grid-template-columns: 1fr; }
+  .il-bar-row { grid-template-columns: 100px 1fr 40px; }
+}

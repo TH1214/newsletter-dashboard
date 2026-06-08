@@ -9,6 +9,7 @@ import {
   getSectionInfo,
 } from '@/lib/content';
 import { SECTIONS } from '@/lib/sections';
+import { articleLinkAttrs } from '@/lib/interest/attrs';
 
 export default function HomePage() {
   const issue = getLatestIssue();
@@ -34,7 +35,11 @@ export default function HomePage() {
             <span className="dot">·</span>
             <span>{getSectionInfo(latest8[0].section).label}</span>
             <span className="dot">·</span>
-            <Link href={`/issues/${latest8[0].date}/${latest8[0].slug}/`} className="wb-cta">
+            <Link
+              href={`/issues/${latest8[0].date}/${latest8[0].slug}/`}
+              className="wb-cta"
+              {...articleLinkAttrs(latest8[0])}
+            >
               Read Lead →
             </Link>
           </div>
@@ -51,7 +56,7 @@ export default function HomePage() {
               const sec = getSectionInfo(a.section);
               const titleClean = a.title.split('｜')[0].split('|')[0];
               return (
-                <Link key={a.slug} href={`/issues/${a.date}/${a.slug}/`} className="wb-card">
+                <Link key={a.slug} href={`/issues/${a.date}/${a.slug}/`} className="wb-card" {...articleLinkAttrs(a)}>
                   <div
                     className="wb-card-img"
                     style={{ backgroundImage: `url(${a.heroImage})` }}

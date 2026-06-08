@@ -10,6 +10,7 @@ import {
   getIssue,
   getSectionInfo,
 } from '@/lib/content';
+import { outboundLinkAttrs } from '@/lib/interest/attrs';
 
 export function generateStaticParams() {
   return getAllArticles().map((a) => ({ date: a.date, slug: a.slug }));
@@ -76,7 +77,15 @@ export default function ArticlePage({
                 {article.originalUrl && (
                   <>
                     {' · '}
-                    <a href={article.originalUrl} target="_blank" rel="noopener">
+                    <a
+                      href={article.originalUrl}
+                      target="_blank"
+                      rel="noopener"
+                      {...outboundLinkAttrs(
+                        { slug: article.slug, section: article.section, date: article.date, title: article.title, tags: article.tags },
+                        article.originalUrl
+                      )}
+                    >
                       View original ↗
                     </a>
                   </>

@@ -9,6 +9,7 @@ import {
   getLatestIssue,
   getSectionInfo,
 } from '@/lib/content';
+import { articleLinkAttrs } from '@/lib/interest/attrs';
 
 export default function ArchivePage() {
   const issue = getLatestIssue();
@@ -74,6 +75,7 @@ export default function ArchivePage() {
                       key={a.slug}
                       href={`/issues/${a.date}/${a.slug}/`}
                       className="wb-arch-card"
+                      {...articleLinkAttrs(a)}
                     >
                       <div
                         className="wb-arch-card-img"
