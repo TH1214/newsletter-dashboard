@@ -15,6 +15,7 @@ const SHORT: Record<string, string> = {
   'cnbc': 'CNBC',
   'cnbc-squawk': 'Squawk',
   'hospitality-net': 'HN',
+  'pere': 'PERE',
 };
 
 export function SectionNav() {

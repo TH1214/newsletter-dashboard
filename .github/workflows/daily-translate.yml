@@ -62,6 +62,7 @@ jobs:
           - cnbc
           - cnbc-squawk
           - hospitality-net
+          - pere
     outputs:
       date: ${{ steps.compute_date.outputs.date }}
     steps:

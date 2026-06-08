@@ -15,6 +15,7 @@ export const SECTIONS = [
   { slug: 'cnbc',             label: 'CNBC Breaking News', eyebrow: 'BREAKING · FINANCE' },
   { slug: 'cnbc-squawk',      label: 'CNBC Morning Squawk',          eyebrow: 'MARKETS · MORNING BRIEF' },
   { slug: 'hospitality-net', label: 'Hospitality Net Daily Brief',  eyebrow: 'HOSPITALITY · REAL ESTATE' },
+  { slug: 'pere',            label: 'PERE',                         eyebrow: 'PRIVATE EQUITY · REAL ESTATE' },
 ] as const;
 
 export type SectionSlug = (typeof SECTIONS)[number]['slug'];

@@ -30,6 +30,7 @@ business-insider → ソース名: Business Insider, カテゴリ: Business Insi
 cnbc → ソース名: CNBC Breaking News, カテゴリ: CNBC
 cnbc-squawk → ソース名: CNBC Morning Squawk, カテゴリ: Squawk
 hospitality-net → ソース名: Hospitality Net Daily Brief, カテゴリ: Hospitality Net
+pere → ソース名: PERE, カテゴリ: PERE
 
 【レポート構成】
 1. 出典セクション: 「## 出典」+ 原文リンク
@@ -59,6 +60,20 @@ CNBCは1日20〜30通届く速報型ニュースレターです。通常の「**
 - **その他のセクション（OPINION, TODAY'S NEWS, SUPPLIER NEWS等）はタイトルの日本語訳のみ**。著者名・組織名はそのまま英語で残す
 - UPCOMING EVENTSセクションはスキップしてよい
 - 出力形式は他ソースと同一のfront matterテンプレートに従う
+
+【PERE 固有ルール (SOURCE_SLUG: pere)】
+- メールは2種類のフォーマットで届く:
+  1. **Daily Digest**（月〜木）: 件名「[曜日]'s news」。「Latest News」セクションにヘッドライン8〜11本 + 「LP Tearsheet」セクションにInvestor Intentions 2〜3件
+  2. **Friday Letter**（金曜）: 件名「Friday Letter: [テーマ]」。週次エディトリアル分析
+- **Daily Digest の翻訳方針**:
+  - 「Latest News」の全ヘッドラインを日本語訳する
+  - 「LP Tearsheet / Investor Intentions」も全件日本語訳する（LP名はそのまま英語で残す）
+  - 「Sponsored」「Click here to learn how to sponsor」等の広告・プロモーション文は除外する
+  - 「Begin a Search」「LP data」「GP data」「Funds in market」等のナビゲーション要素は除外する
+- **Friday Letter の翻訳方針**:
+  - エディトリアル本文を全文翻訳し、McKinsey品質の詳細解説を付ける
+- 出力形式は他ソースと同一のfront matterテンプレートに従う
+- PEREは Private Equity Real Estate（不動産プライベートエクイティ）の略称。不動産ファンド、LP/GP関係、ファンドレイジング、投資戦略に関する専門媒体
 
 【翻訳スタイル】
 - McKinsey/BCGクラスのコンサルティングレポート品質
