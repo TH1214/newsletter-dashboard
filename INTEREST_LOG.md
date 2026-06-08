@@ -134,3 +134,50 @@ npm run build      # 静的エクスポート (output: 'export')
 ```
 
 `localhost` が Authorized domains に入っていれば、ローカルでも Google ログイン→記録→Dashboard 表示まで確認できる。
+
+---
+
+## 受け入れ確認チェックリスト（本番 = main マージ後）
+
+ログは大きく 2 種類ある。両方が記録されることを確認する。
+
+1. **`article_click`** — トップ／一覧の記事カードをクリック（内部の `/issues/{date}/{slug}/` 記事詳細へ遷移）したときの記録。
+2. **`outbound_click`** — 記事詳細ページ内の外部原文リンク **「View original ↗」** を押し、外部サイトへ飛んだときの記録。戻ると同 doc に `estimated_external_dwell_seconds`（推定値）が追記される。
+
+> 本当に見たい指標は「どの記事を開いたか」だけでなく「どの記事から外部原文へ飛んだか／どのソースへ飛んだか／飛んでから戻るまでの推定時間」。
+> そのため確認では **記事カードのクリックだけでなく、必ず記事詳細ページの外部リンクも押すこと。**
+
+### 手順（Mac）
+
+1. Mac Safari で `https://th1214.github.io/newsletter-dashboard/` を開く。
+2. ナビの **「★ My Interest」** → **Sign in with Google** → `hashiramoto@mellowps.com` でログイン。
+3. トップへ戻り、**記事カードを1つクリック**（→ `article_click`）。
+4. 開いた記事詳細ページ末尾の **「View original ↗」を押す**（→ `outbound_click`）。外部サイトを数秒見てタブを戻る（→ `estimated_external_dwell_seconds` 追記）。
+5. Firebase Console → Firestore Database → `reading_events` collection を開いて document を確認。
+
+### 手順（iPhone・5G）
+
+6. iPhone Safari を **Wi-Fi を切って 5G** にして同じ URL を開く。
+7. 同じ Google アカウントでログイン。
+8. **記事カードを1つクリック**（→ `article_click`）。可能なら記事詳細で **View original** も押す（→ `outbound_click`）。
+9. Mac で `/interest/`（My Interest）を開き、**iPhone でクリックした履歴も統合表示**されることを確認（同期ボタン・export/import なし）。
+
+### Firestore 上で確認すべきフィールド（`reading_events` の各 document）
+
+| 確認項目 | フィールド | 期待値 |
+|---|---|---|
+| 記事クリックが残るか | `event_type` | `article_click` |
+| 外部原文クリックが残るか | `event_type` | `outbound_click` |
+| ソースが入っているか | `source` | 例: `WSJ 10-Point` / `NYT Breaking News` |
+| カテゴリ/セクションが入っているか | `category` または `section` | `category`=タグ等 / `section`=`wsj` 等の slug |
+| 記事URLが入っているか | `article_url` | `/issues/{date}/{slug}/` |
+| 外部滞留の推定値（戻り後） | `estimated_external_dwell_seconds` | 0 より大、最大 1800（30分cap・推定値） |
+| 本人記録か | `user_email` | `hashiramoto@mellowps.com` |
+| 端末識別 | `device_id` / `is_mobile` | Mac と iPhone で別 `device_id`、iPhone は `is_mobile=true` |
+
+**合格ライン（実用上 OK）**: `article_click` と `outbound_click` の両方が保存され、`source`・(`section` または `category`)・`article_url` が入っており、iPhone のログが Mac の `/interest/` に出ること。
+
+### うまくいかない場合
+
+- `/interest/` にログインボタンが出ない / Google ログイン後に戻ってこない → Firebase Authentication の **Authorized domains に `th1214.github.io`** が入っているか再確認（登録済みのはず）。
+- 記録されない → ブラウザのコンソールで Firestore 権限エラーが出ていないか、ログイン中メールが許可メールと一致しているかを確認。書き込みの本体ガードは Security Rules 側。
