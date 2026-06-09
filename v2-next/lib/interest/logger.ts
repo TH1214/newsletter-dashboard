@@ -17,7 +17,7 @@
 
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { getFirebase, isAllowedUser } from './firebaseClient';
-import { COLLECTION, EXTERNAL_DWELL_CAP_SECONDS } from './config';
+import { COLLECTION, EXTERNAL_DWELL_CAP_SECONDS, READ_DWELL_CAP_SECONDS } from './config';
 import type { User } from 'firebase/auth';
 
 const DEVICE_KEY = 'il_device_id';
@@ -27,6 +27,7 @@ const EXTERNAL_KEY = 'il_pending_external';
 
 export type EventType =
   | 'article_click'
+  | 'article_detail_read'
   | 'outbound_click'
   | 'dashboard_view'
   | 'interest_dashboard_view';
@@ -382,4 +383,169 @@ export async function resolveExternalDwell(): Promise<void> {
   } catch {
     /* 失敗しても推定値なので致命ではない */
   }
+}
+
+/* ------------------------------------------------------------------
+   article_detail_read — 記事詳細ページの読書セッション (= 最重要ログ)
+
+   記事詳細ページを開いた時点で 1 document を作り、滞留秒数と
+   「その時点の記事スナップショット」を保存する。離脱のたびに setDoc(merge)
+   で更新。同じ session × 同じ記事は同じ doc を更新する。
+
+   CMS の内容が将来変わっても当時読んだ内容を再現できるよう、
+   title/summary/body_text/tags 等のスナップショットを保存する。
+   ------------------------------------------------------------------ */
+
+const READ_PENDING_KEY = 'il_read_pending';
+
+export interface ArticleSnapshot {
+  article_snapshot_title?: string;
+  article_snapshot_summary?: string;
+  article_snapshot_body_text?: string;
+  article_snapshot_source?: string;
+  article_snapshot_section?: string;
+  article_snapshot_category?: string;
+  article_snapshot_tags?: string[];
+  article_snapshot_issue_date?: string;
+  article_snapshot_url?: string;
+  article_snapshot_captured_at?: string;
+}
+
+export interface ReadSessionInput extends ReadingEventMeta {
+  tags?: string[];
+  read_started_at?: string;
+  read_ended_at?: string;
+  dashboard_dwell_seconds?: number;
+  snapshot?: ArticleSnapshot;
+}
+
+function identity() {
+  const u = _currentUser;
+  return {
+    user_email: u?.email || '',
+    uid: u?.uid || '',
+    device_id: getDeviceId(),
+    session_id: getSessionId(),
+  };
+}
+
+/** session × article で安定する read session id (= doc id)。 */
+export function buildReadSessionId(articleId: string): string {
+  return sanitizeDocId(`article_detail_read_${getDeviceId()}_${getSessionId()}_${articleId}`);
+}
+
+function getReadPending(): Record<string, any> {
+  if (typeof localStorage === 'undefined') return {};
+  try {
+    return JSON.parse(localStorage.getItem(READ_PENDING_KEY) || '{}');
+  } catch {
+    return {};
+  }
+}
+
+function writeReadPending(map: Record<string, any>) {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(READ_PENDING_KEY, JSON.stringify(map));
+  } catch {
+    /* quota 超過時は本文を捨てて最小限だけ退避 */
+    try {
+      const slim: Record<string, any> = {};
+      for (const [k, v] of Object.entries(map)) {
+        const { article_snapshot_body_text, ...rest } = v;
+        slim[k] = rest;
+      }
+      localStorage.setItem(READ_PENDING_KEY, JSON.stringify(slim));
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
+/**
+ * 読書セッションを upsert (write-ahead → Firestore setDoc merge)。
+ * dashboard_dwell_seconds は秒・整数・上限 READ_DWELL_CAP_SECONDS。
+ */
+export async function upsertReadSession(readId: string, fields: ReadSessionInput): Promise<boolean> {
+  const now = new Date().toISOString();
+  const dwell =
+    fields.dashboard_dwell_seconds != null
+      ? Math.min(Math.max(0, Math.round(fields.dashboard_dwell_seconds)), READ_DWELL_CAP_SECONDS)
+      : undefined;
+
+  const map = getReadPending();
+  const prev = map[readId];
+  // clicked_at 等は最初の作成時刻で固定 (orderBy('clicked_at') クエリ対象に含めるため)
+  const createdDate = prev?.clicked_at ? new Date(prev.clicked_at) : new Date();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const merged: Record<string, any> = {
+    ...(prev || {}),
+    event_id: readId,
+    event_type: 'article_detail_read',
+    ...identity(),
+    clicked_at: prev?.clicked_at ?? now,
+    clicked_date:
+      prev?.clicked_date ??
+      `${createdDate.getFullYear()}-${pad(createdDate.getMonth() + 1)}-${pad(createdDate.getDate())}`,
+    clicked_hour: prev?.clicked_hour ?? createdDate.getHours(),
+    weekday: prev?.weekday ?? WEEKDAYS[createdDate.getDay()],
+    is_mobile:
+      prev?.is_mobile ??
+      (typeof navigator !== 'undefined' ? /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) : false),
+    article_id: fields.article_id ?? prev?.article_id ?? '',
+    title: fields.title ?? prev?.title,
+    source: fields.source ?? prev?.source,
+    section: fields.section ?? prev?.section,
+    category: fields.category ?? prev?.category,
+    tags: fields.tags ?? prev?.tags ?? [],
+    issue_date: fields.issue_date ?? prev?.issue_date,
+    article_url: fields.article_url ?? prev?.article_url,
+    read_started_at: prev?.read_started_at ?? fields.read_started_at ?? now,
+    read_ended_at: fields.read_ended_at ?? now,
+    ...(dwell != null ? { dashboard_dwell_seconds: dwell } : {}),
+    ...(fields.snapshot || {}),
+    created_at: prev?.created_at ?? now,
+    updated_at: now,
+  };
+  map[readId] = merged;
+  writeReadPending(map); // write-ahead
+
+  const fb = getFirebase();
+  if (!fb || !isAllowedUser(_currentUser)) return false;
+  try {
+    await setDoc(
+      doc(fb.db, COLLECTION, readId),
+      { ...merged, synced_at: serverTimestamp() },
+      { merge: true }
+    );
+    delete map[readId];
+    writeReadPending(map);
+    return true;
+  } catch {
+    return false; // pending に残り、後で自動再送
+  }
+}
+
+/** 未保存の読書セッションを自動再送する。 */
+export async function flushReadSessions(): Promise<number> {
+  if (!isAllowedUser(_currentUser)) return 0;
+  const fb = getFirebase();
+  if (!fb) return 0;
+  const map = getReadPending();
+  let sent = 0;
+  for (const [readId, rec] of Object.entries(map)) {
+    try {
+      await setDoc(
+        doc(fb.db, COLLECTION, readId),
+        { ...rec, ...identity(), synced_at: serverTimestamp() },
+        { merge: true }
+      );
+      delete map[readId];
+      sent++;
+    } catch {
+      /* 残す */
+    }
+  }
+  writeReadPending(map);
+  return sent;
 }

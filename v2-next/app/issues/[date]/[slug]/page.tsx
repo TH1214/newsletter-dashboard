@@ -32,16 +32,18 @@ export default function ArticlePage({
   return (
     <>
       <div className="progress"><div className="bar"></div></div>
-      {/* Dashboard 滞留時間 (秒) を計測して reading_events に追記 */}
+      {/* 記事詳細の読書セッション (秒) + 記事スナップショットを記録 (= 最重要ログ) */}
       <ArticleDwellTracker
         meta={{
           article_id: article.slug,
           title: resolveDisplayTitle(article),
+          summary: article.summary,
           source: sec.label,
           section: article.section,
           category: article.tags[0] || '',
           issue_date: article.date,
           article_url: `/issues/${article.date}/${article.slug}/`,
+          tags: article.tags,
         }}
       />
       <MetaBar issue={issue} suffix={`Article ${issue.articles.findIndex((a) => a.slug === article.slug) + 1}`} />

@@ -21,6 +21,7 @@ import {
   recordEvent,
   recordOutboundClick,
   flushQueue,
+  flushReadSessions,
   resolveExternalDwell,
   type ReadingEventMeta,
 } from '@/lib/interest/logger';
@@ -47,8 +48,9 @@ export function InterestLogger() {
     // --- auth 監視: ログイン状態が変わるたびに current user を更新し再送 ---
     const unsub = watchAuth(async (user) => {
       setCurrentUser(user);
-      // ログイン完了時に未送信キューを自動再送 (ユーザー操作不要)
+      // ログイン完了時に未送信キュー・読書セッションを自動再送 (ユーザー操作不要)
       await flushQueue();
+      await flushReadSessions();
     });
 
     // --- クリック委譲: 記事カード / 外部リンク ---
@@ -74,16 +76,21 @@ export function InterestLogger() {
       if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
       await resolveExternalDwell();
       await flushQueue();
+      await flushReadSessions();
     };
     document.addEventListener('visibilitychange', onReturn);
     window.addEventListener('focus', onReturn);
     window.addEventListener('pageshow', onReturn);
     // online 復帰時にも自動再送
-    const onOnline = () => void flushQueue();
+    const onOnline = () => {
+      void flushQueue();
+      void flushReadSessions();
+    };
     window.addEventListener('online', onOnline);
 
     // 初回ロード時にも一度再送を試みる (前回失敗分の自動リカバリ)
     void flushQueue();
+    void flushReadSessions();
 
     return () => {
       unsub();

@@ -21,6 +21,15 @@ export const LOOKBACK_DAYS = 30;
 /** 外部サイト滞留推定値の上限 (秒) — これ以上はノイズとして cap */
 export const EXTERNAL_DWELL_CAP_SECONDS = 1800;
 
+/** 記事詳細ページの読書滞留 (dashboard_dwell_seconds) の上限 (秒) */
+export const READ_DWELL_CAP_SECONDS = 1800;
+
+/** 記事本文スナップショットの最大文字数 (Firestore document size 保護) */
+export const SNAPSHOT_MAX_CHARS = 20000;
+
+/** これ未満は「短時間で離脱」とみなす閾値 (秒) */
+export const SHORT_READ_SECONDS = 10;
+
 /** Firestore collection 名 */
 export const COLLECTION = 'reading_events';
 
