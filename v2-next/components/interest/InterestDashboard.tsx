@@ -53,6 +53,7 @@ interface EventRow {
   tags?: string[];
   issue_date?: string;
   clicked_at?: string;
+  clicked_date?: string;
   clicked_hour?: number;
   weekday?: string;
   device_id?: string;
@@ -296,6 +297,10 @@ export function InterestDashboard({ catalog = {} }: { catalog?: ArticleCatalog }
   const totalReadSecs = reads.reduce((s, r) => s + readSecs(r), 0);
   const avgReadSecs = reads.length ? Math.round(totalReadSecs / reads.length) : 0;
 
+  // クリック履歴 (入口ログ) — 記録は InterestLogger が article_click で実施済み
+  const recentClicks = clicks.slice().sort((a, b) => (eventTime(a) < eventTime(b) ? 1 : -1)).slice(0, 15);
+  const byClickSource = topRows(sumBy(clicks, (r) => resolveDisplay(r, catalog).source, () => 1));
+
   const recentReads = reads.slice().sort((a, b) => (eventTime(a) < eventTime(b) ? 1 : -1)).slice(0, 15);
   const longReads = reads.filter((r) => readSecs(r) > 0).sort((a, b) => readSecs(b) - readSecs(a)).slice(0, 10);
   const shortLeave = reads
@@ -424,6 +429,35 @@ export function InterestDashboard({ catalog = {} }: { catalog?: ArticleCatalog }
                     <span className="il-title">{d.title}</span>
                     <br />
                     <span className="il-meta"><span className="il-src">{d.source}</span> · {fmtSecs(readSecs(r))}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+
+        {/* === クリック履歴 (入口ログ) === */}
+        <div className="il-card">
+          <h2>クリック数（ソース別） <span className="il-hint">入口ログ</span></h2>
+          <Bar rows={byClickSource} />
+        </div>
+
+        <div className="il-card il-span2">
+          <h2>最近クリックした記事 <span className="il-hint">一覧/トップで記事カードを開いた履歴</span></h2>
+          {recentClicks.length === 0 ? (
+            <p className="il-empty">まだクリック履歴がありません。記事カードを押すと記録されます。</p>
+          ) : (
+            <ul className="il-list">
+              {recentClicks.map((r, i) => {
+                const d = resolveDisplay(r, catalog);
+                const time = (r.clicked_at || '').slice(11, 16);
+                return (
+                  <li key={(r.article_id || '') + i}>
+                    <span className="il-title">{d.title}</span>
+                    <br />
+                    <span className="il-meta">
+                      <span className="il-src">{d.source}</span> · {r.issue_date} · {r.clicked_date} {time}
+                    </span>
                   </li>
                 );
               })}
