@@ -15,6 +15,17 @@ export { SECTIONS, type SectionSlug, getSectionInfo } from './sections';
 
 const CONTENT_ROOT = path.join(process.cwd(), 'content');
 
+/* front matter の date を YYYY-MM-DD 文字列へ正規化。
+   YAML は無クオートの 2026-06-09 を Date に自動変換するため両対応する。 */
+function toDateString(v: unknown): string {
+  if (v instanceof Date) return v.toISOString().slice(0, 10);
+  if (typeof v === 'string') {
+    const m = v.match(/^\d{4}-\d{2}-\d{2}/);
+    if (m) return m[0];
+  }
+  return '';
+}
+
 export interface Article {
   section: SectionSlug;
   date: string;          // YYYY-MM-DD
@@ -38,27 +49,39 @@ export function getAllArticles(): Article[] {
     if (!fs.existsSync(dir)) continue;
     for (const f of fs.readdirSync(dir)) {
       if (!f.endsWith('.md') || f.startsWith('_')) continue;
-      const date = f.replace(/\.md$/, '');
+      const stem = f.replace(/\.md$/, '');
       const raw = fs.readFileSync(path.join(dir, f), 'utf-8');
       const { data, content } = matter(raw);
+      // ファイル名が YYYY-MM-DD なら従来どおり 1日1ファイル。
+      // それ以外（例: nikkei-hack の nikkei-YYYYMMDD-NN-*.md）は front matter の
+      // date を採用し、slug はファイル名から作る（1日に複数記事を許容）。
+      const isDateStem = /^\d{4}-\d{2}-\d{2}$/.test(stem);
+      const date = isDateStem ? stem : (toDateString(data.date) || stem);
+      const slugId = isDateStem ? `${sec.slug}-${date}` : `${sec.slug}-${stem}`;
+      // hero: hero_image が「明示的に空文字」なら画像なし（nikkei-hack v1）。
+      // 省略時のみ従来の規約パス /images/<section>/<date>.png を使う。
       // P3 #5 (v3.2.2): WebP 優先 + PNG fallback
-      // build-time に WebP ファイルが存在すれば WebP パスを採用、無ければ PNG
-      // (deploy.yml で convert_images_to_webp.py が並列変換し WebP を生成する)
-      const pngBasename = (data.hero_image as string) || `/images/${sec.slug}/${date}.png`;
-      const webpAbsPath = path.join(process.cwd(), 'public', pngBasename.replace(/^\//, '').replace(/\.png$/, '.webp'));
-      const useWebp = fs.existsSync(webpAbsPath);
-      const heroImage = useWebp ? pngBasename.replace(/\.png$/, '.webp') : pngBasename;
+      let heroImage: string;
+      if (data.hero_image === '') {
+        heroImage = '';
+      } else {
+        const pngBasename = (data.hero_image as string) || `/images/${sec.slug}/${date}.png`;
+        const webpAbsPath = path.join(process.cwd(), 'public', pngBasename.replace(/^\//, '').replace(/\.png$/, '.webp'));
+        const useWebp = fs.existsSync(webpAbsPath);
+        const h = useWebp ? pngBasename.replace(/\.png$/, '.webp') : pngBasename;
+        heroImage = h.startsWith('http') ? h : '/newsletter-dashboard' + h.replace(/^\/+/, '/');
+      }
       const html = String(remark().use(remarkGfm).use(remarkHtml).processSync(content));
       const wordCount = content.replace(/\s+/g, ' ').trim().length;
       const readMinutes = Math.max(2, Math.round(wordCount / 600));
       out.push({
         section: sec.slug,
         date,
-        slug: `${sec.slug}-${date}`,
+        slug: slugId,
         title: (data.title as string) || sec.label,
         summary: (data.summary as string) || '',
         tags: (data.tags as string[]) || [],
-        heroImage: heroImage.startsWith('http') ? heroImage : '/newsletter-dashboard' + heroImage.replace(/^\/+/, '/'),
+        heroImage,
         originalUrl: (data.original_url as string) || '',
         contentHtml: html,
         readMinutes,
