@@ -47,6 +47,12 @@ log = logging.getLogger(__name__)
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 GEMINI_TEXT_MODEL = os.environ.get("GEMINI_TEXT_MODEL", "gemini-2.5-flash")
 GEMINI_ENDPOINT = os.environ.get("GEMINI_ENDPOINT", "https://generativelanguage.googleapis.com/v1beta")
+# GitHub Models (キーワード生成フォールバック: GEMINI_API_KEY 未設定時に使用)。
+# GitHub Actions ネイティブで GITHUB_TOKEN 認証。GROQ は Actions IP が Cloudflare 1010
+# でブロックされるため、Actions では GitHub Models を優先する。
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
+GITHUB_MODELS_ENDPOINT = os.environ.get("GITHUB_MODELS_ENDPOINT", "https://models.github.ai/inference")
+GITHUB_MODELS_MODEL = os.environ.get("GITHUB_MODELS_MODEL", "openai/gpt-4o-mini")
 UNSPLASH_ACCESS_KEY = os.environ.get("UNSPLASH_ACCESS_KEY", "h2nrT6P2-7X1uFTM0ThFCWqub6B8Cc0M-ItRpoTV1aA")
 UNSPLASH_ENDPOINT = "https://api.unsplash.com/photos/random"
 
@@ -297,6 +303,79 @@ Apply the 12-Layer Algorithm and output ONLY the Unsplash search keywords (3-4 w
     return None
 
 
+def generate_keywords_with_github_models(source: str, summary: str) -> Optional[str]:
+    """GitHub Models (OpenAI互換) で12層アルゴリズムのキーワードを生成。
+    GEMINI_API_KEY 未設定時のフォールバック。GitHub Actions ネイティブで動作する。"""
+    if not GITHUB_TOKEN:
+        log.warning("GITHUB_TOKEN not set, cannot use GitHub Models fallback")
+        return None
+
+    url = f"{GITHUB_MODELS_ENDPOINT.rstrip('/')}/chat/completions"
+    user_message = f"""Source: {source}
+
+Article summary:
+\"\"\"
+{summary}
+\"\"\"
+
+Apply the 12-Layer Algorithm and output ONLY the Unsplash search keywords (3-4 words, English only)."""
+
+    payload = json.dumps({
+        "model": GITHUB_MODELS_MODEL,
+        "messages": [
+            {"role": "system", "content": LAYER12_SYSTEM_PROMPT},
+            {"role": "user", "content": user_message},
+        ],
+        "temperature": 0.7,
+        "max_tokens": 30,
+    }).encode("utf-8")
+
+    for attempt in range(3):
+        try:
+            req = urllib.request.Request(
+                url,
+                data=payload,
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {GITHUB_TOKEN}",
+                    "Accept": "application/json",
+                },
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                data = json.loads(resp.read())
+                text = (
+                    data.get("choices", [{}])[0]
+                    .get("message", {})
+                    .get("content", "")
+                    .strip()
+                    .strip('"')
+                    .lower()
+                )
+                text = re.sub(r"[^\w\s]", "", text).strip()
+                words = text.split()[:4]
+                keywords = " ".join(words)
+                if keywords:
+                    log.info(f"GitHub Models 12-Layer keywords: {keywords!r}")
+                    return keywords
+        except urllib.error.HTTPError as e:
+            body = ""
+            try:
+                body = e.read().decode("utf-8", "ignore")[:200]
+            except Exception:
+                pass
+            log.warning(f"GitHub Models HTTP {e.code} (attempt {attempt+1}/3) {body}")
+            if e.code == 429:
+                time.sleep(15 * (attempt + 1))
+            else:
+                break
+        except Exception as e:
+            log.warning(f"GitHub Models error: {e} (attempt {attempt+1}/3)")
+            time.sleep(5)
+
+    return None
+
+
 def get_unsplash_image(keywords: str, retries: int = 3) -> Optional[str]:
     """Unsplash APIから画像URLを取得"""
     query = urllib.parse.quote(keywords, safe="")
@@ -352,12 +431,15 @@ def main() -> int:
     log.info(f"Processing: source={source} date={date}")
     log.info(f"Summary: {summary[:80]}...")
 
-    # Step 1: Gemini 12層アルゴリズムでキーワード生成
+    # Step 1: 12層アルゴリズムでキーワード生成 (Gemini → GitHub Models の順)
     keywords = None
     if summary:
         keywords = generate_keywords_with_gemini(source, summary)
+        if not keywords:
+            # GEMINI_API_KEY 未設定/失敗時は GitHub Models で内容特化キーワードを生成
+            keywords = generate_keywords_with_github_models(source, summary)
 
-    # Step 2: フォールバック（Gemini失敗時）
+    # Step 2: フォールバック（AI生成すべて失敗時のみ・汎用キーワード）
     if not keywords:
         keywords = FALLBACK_KEYWORDS.get(source, "empty room morning light architecture")
         log.info(f"Using fallback keywords: {keywords!r}")
