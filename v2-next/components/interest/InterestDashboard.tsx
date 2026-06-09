@@ -32,14 +32,15 @@ import {
   COLLECTION,
   LOOKBACK_DAYS,
   QUERY_LIMIT,
+  SHORT_READ_SECONDS,
 } from '@/lib/interest/config';
 import {
   setCurrentUser,
   recordEvent,
   getQueueCount,
   flushQueue,
+  flushReadSessions,
 } from '@/lib/interest/logger';
-import { SECTIONS } from '@/lib/sections';
 import './interest.css';
 
 interface EventRow {
@@ -49,14 +50,34 @@ interface EventRow {
   source?: string;
   category?: string;
   section?: string;
+  tags?: string[];
   issue_date?: string;
   clicked_at?: string;
   clicked_hour?: number;
   weekday?: string;
   device_id?: string;
   is_mobile?: boolean;
+  dashboard_dwell_seconds?: number;
   estimated_external_dwell_seconds?: number;
+  read_started_at?: string;
+  read_ended_at?: string;
+  updated_at?: string;
+  // その時点の記事スナップショット
+  article_snapshot_title?: string;
+  article_snapshot_summary?: string;
+  article_snapshot_body_text?: string;
+  article_snapshot_source?: string;
+  article_snapshot_section?: string;
+  article_snapshot_category?: string;
+  article_snapshot_tags?: string[];
+  article_snapshot_issue_date?: string;
 }
+
+/** ビルド時に生成する記事カタログ (article_id → 現行の表示情報)。過去ログのタイトル補完に使う。 */
+export type ArticleCatalog = Record<
+  string,
+  { title: string; source: string; section: string; category: string }
+>;
 
 type AuthState = 'loading' | 'signed-out' | 'denied' | 'allowed';
 
@@ -80,16 +101,6 @@ function Bar({ rows }: { rows: { label: string; value: number }[] }) {
   );
 }
 
-function countBy(rows: EventRow[], key: (r: EventRow) => string | undefined) {
-  const m = new Map<string, number>();
-  for (const r of rows) {
-    const k = key(r);
-    if (!k) continue;
-    m.set(k, (m.get(k) || 0) + 1);
-  }
-  return m;
-}
-
 function topRows(m: Map<string, number>, n = 12) {
   return [...m.entries()]
     .sort((a, b) => b[1] - a[1])
@@ -97,7 +108,58 @@ function topRows(m: Map<string, number>, n = 12) {
     .map(([label, value]) => ({ label, value }));
 }
 
-export function InterestDashboard() {
+/** イベントの表示用フィールドを解決。優先: スナップショット → カタログ補完 → イベント値。 */
+function resolveDisplay(r: EventRow, catalog: ArticleCatalog) {
+  const cat = (r.article_id && catalog[r.article_id]) || undefined;
+  const rawTitle = (r.title || '').trim();
+  const looksLikeSourceName = !!(cat && (rawTitle === cat.source || rawTitle === cat.section));
+  const title =
+    (r.article_snapshot_title || '').trim() ||
+    cat?.title ||
+    (rawTitle && !looksLikeSourceName ? rawTitle : '') ||
+    r.article_id ||
+    '(無題)';
+  const tags = (r.article_snapshot_tags && r.article_snapshot_tags.length
+    ? r.article_snapshot_tags
+    : r.tags) || [];
+  return {
+    title,
+    source: r.article_snapshot_source || cat?.source || r.source || '',
+    section: r.article_snapshot_section || cat?.section || r.section || '',
+    category: r.article_snapshot_category || cat?.category || r.category || '',
+    tags,
+    bodyText: r.article_snapshot_body_text || '',
+  };
+}
+
+/** 読書秒数 (Dashboard滞留)。 */
+function readSecs(r: EventRow): number {
+  return r.dashboard_dwell_seconds || 0;
+}
+
+/** イベントの代表時刻 (読了時刻 → クリック時刻)。 */
+function eventTime(r: EventRow): string {
+  return r.read_ended_at || r.updated_at || r.clicked_at || '';
+}
+
+/** 秒の表示整形。 */
+function fmtSecs(s: number): string {
+  if (s >= 60) return `${Math.floor(s / 60)}分${s % 60}秒`;
+  return `${s}秒`;
+}
+
+/** keyFn ごとに値(秒など)を合計。 */
+function sumBy(rows: EventRow[], key: (r: EventRow) => string | undefined, val: (r: EventRow) => number) {
+  const m = new Map<string, number>();
+  for (const r of rows) {
+    const k = key(r);
+    if (!k) continue;
+    m.set(k, (m.get(k) || 0) + val(r));
+  }
+  return m;
+}
+
+export function InterestDashboard({ catalog = {} }: { catalog?: ArticleCatalog }) {
   const [auth, setAuth] = useState<AuthState>('loading');
   const [user, setUser] = useState<User | null>(null);
   const [events, setEvents] = useState<EventRow[] | null>(null);
@@ -137,6 +199,7 @@ export function InterestDashboard() {
       setEvents(rows);
       // 自動再送 + interest_dashboard_view を最小限記録 (セッション1回)
       await flushQueue();
+      await flushReadSessions();
       setPending(getQueueCount());
       if (typeof sessionStorage !== 'undefined' && !sessionStorage.getItem('il_idv')) {
         sessionStorage.setItem('il_idv', '1');
@@ -196,45 +259,59 @@ export function InterestDashboard() {
     );
   }
 
-  /* ---------- render: allowed dashboard ---------- */
+  /* ---------- render: allowed dashboard (読書時間中心) ---------- */
 
   const rows = events || [];
-  const clicks = rows.filter((r) => r.event_type === 'article_click');
-  const outbounds = rows.filter((r) => r.event_type === 'outbound_click');
+  const reads = rows.filter((r) => r.event_type === 'article_detail_read'); // 主分析対象
+  const clicks = rows.filter((r) => r.event_type === 'article_click');       // 入口ログ (補助)
+  const outbounds = rows.filter((r) => r.event_type === 'outbound_click');   // 外部 (補助)
 
-  const bySource = topRows(countBy(clicks, (r) => r.source));
-  const byCategory = topRows(countBy(clicks, (r) => r.category));
-  const byWeekday = WEEKDAYS.map((w) => ({
+  // --- 読書秒数ベースの集計 ---
+  const bySourceSecs = topRows(sumBy(reads, (r) => resolveDisplay(r, catalog).source, readSecs));
+  const byCategorySecs = topRows(sumBy(reads, (r) => resolveDisplay(r, catalog).category, readSecs));
+  const byWeekdaySecs = WEEKDAYS.map((w) => ({
     label: w,
-    value: clicks.filter((r) => r.weekday === w).length,
+    value: reads.filter((r) => r.weekday === w).reduce((s, r) => s + readSecs(r), 0),
   }));
-  const byHour = Array.from({ length: 24 }, (_, h) => ({
+  const byHourSecs = Array.from({ length: 24 }, (_, h) => ({
     label: `${String(h).padStart(2, '0')}時`,
-    value: clicks.filter((r) => r.clicked_hour === h).length,
+    value: reads.filter((r) => r.clicked_hour === h).reduce((s, r) => s + readSecs(r), 0),
   })).filter((r) => r.value > 0);
-  const byDevice = topRows(
-    countBy(clicks, (r) => (r.is_mobile ? '📱 Mobile' : '💻 Desktop') + ' · ' + (r.device_id || '').slice(0, 6)),
+  const byDeviceSecs = topRows(
+    sumBy(reads, (r) => (r.is_mobile ? '📱 Mobile' : '💻 Desktop') + ' · ' + (r.device_id || '').slice(0, 6), readSecs),
     8
   );
 
-  // セクション別クリック数 (0 件含む) → あまり読んでいないカテゴリ算出に使う
-  const secCount = countBy(clicks, (r) => r.section);
-  const leastRead = SECTIONS
-    .map((s) => ({ label: s.label, value: secCount.get(s.slug) || 0 }))
-    .sort((a, b) => a.value - b.value)
-    .slice(0, 6);
+  // タグ別 読書秒数
+  const tagMap = new Map<string, number>();
+  for (const r of reads) {
+    const s = readSecs(r);
+    for (const t of resolveDisplay(r, catalog).tags) {
+      if (!t) continue;
+      tagMap.set(t, (tagMap.get(t) || 0) + s);
+    }
+  }
+  const byTagSecs = topRows(tagMap);
 
-  const recent = clicks.slice(0, 12);
-  const longDwell = outbounds
-    .filter((r) => (r.estimated_external_dwell_seconds || 0) > 0)
-    .sort((a, b) => (b.estimated_external_dwell_seconds || 0) - (a.estimated_external_dwell_seconds || 0))
+  const totalReadSecs = reads.reduce((s, r) => s + readSecs(r), 0);
+  const avgReadSecs = reads.length ? Math.round(totalReadSecs / reads.length) : 0;
+
+  const recentReads = reads.slice().sort((a, b) => (eventTime(a) < eventTime(b) ? 1 : -1)).slice(0, 15);
+  const longReads = reads.filter((r) => readSecs(r) > 0).sort((a, b) => readSecs(b) - readSecs(a)).slice(0, 10);
+  const shortLeave = reads
+    .filter((r) => readSecs(r) < SHORT_READ_SECONDS)
+    .sort((a, b) => readSecs(a) - readSecs(b))
+    .slice(0, 10);
+  const recentOutbounds = outbounds
+    .slice()
+    .sort((a, b) => (eventTime(a) < eventTime(b) ? 1 : -1))
     .slice(0, 8);
 
   return (
     <div className="il-wrap">
       <div className="il-head">
         <h1>My Interest</h1>
-        <span className="il-eyebrow">直近 {LOOKBACK_DAYS} 日 / 最大 {QUERY_LIMIT} 件</span>
+        <span className="il-eyebrow">直近 {LOOKBACK_DAYS} 日 / 最大 {QUERY_LIMIT} 件 · 読書時間ベース</span>
       </div>
       <div className="il-userline">
         <span>● {user?.email}</span>
@@ -248,67 +325,132 @@ export function InterestDashboard() {
       {error && <p className="il-note" style={{ color: '#b00' }}>{error}</p>}
 
       <div className="il-stats">
-        <div className="il-stat"><span className="n">{clicks.length}</span><span className="k">Article clicks</span></div>
-        <div className="il-stat"><span className="n">{outbounds.length}</span><span className="k">Outbound</span></div>
-        <div className="il-stat"><span className="n">{bySource.length}</span><span className="k">Sources</span></div>
-        <div className="il-stat"><span className="n">{new Set(clicks.map((r) => r.device_id)).size}</span><span className="k">Devices</span></div>
+        <div className="il-stat"><span className="n">{fmtSecs(totalReadSecs)}</span><span className="k">合計読書時間</span></div>
+        <div className="il-stat"><span className="n">{reads.length}</span><span className="k">読書セッション</span></div>
+        <div className="il-stat"><span className="n">{fmtSecs(avgReadSecs)}</span><span className="k">平均読書時間</span></div>
+        <div className="il-stat"><span className="n">{bySourceSecs.length}</span><span className="k">読んだソース</span></div>
       </div>
 
+      {/* === 主表示: 最近読んだ記事 === */}
       <div className="il-grid">
-        <div className="il-card">
-          <h2>よく読むソース</h2>
-          <Bar rows={bySource} />
-        </div>
-        <div className="il-card">
-          <h2>カテゴリ別クリック数</h2>
-          <Bar rows={byCategory} />
-        </div>
-        <div className="il-card">
-          <h2>曜日別クリック数</h2>
-          <Bar rows={byWeekday} />
-        </div>
-        <div className="il-card">
-          <h2>時間帯別クリック数</h2>
-          <Bar rows={byHour} />
-        </div>
-        <div className="il-card">
-          <h2>デバイス別クリック数</h2>
-          <Bar rows={byDevice} />
-        </div>
-        <div className="il-card">
-          <h2>あまり読んでいないカテゴリ</h2>
-          <Bar rows={leastRead} />
-        </div>
-
         <div className="il-card il-span2">
-          <h2>最近クリックした記事</h2>
-          {recent.length === 0 ? (
-            <p className="il-empty">まだクリック履歴がありません。記事を開くと自動で記録されます。</p>
+          <h2>最近読んだ記事 <span className="il-hint">記事詳細ページの読書セッション</span></h2>
+          {recentReads.length === 0 ? (
+            <p className="il-empty">まだ読書記録がありません。記事詳細ページを開くと自動で記録されます。</p>
           ) : (
             <ul className="il-list">
-              {recent.map((r, i) => (
-                <li key={(r.article_id || '') + i}>
-                  <span className="il-src">{r.source}</span> {r.title || r.article_id}
-                  <br />
-                  <span className="il-meta">{r.issue_date} · {r.clicked_at?.slice(0, 16).replace('T', ' ')}</span>
-                </li>
-              ))}
+              {recentReads.map((r, i) => {
+                const d = resolveDisplay(r, catalog);
+                return (
+                  <li key={(r.article_id || '') + i}>
+                    <span className="il-title">{d.title}</span>
+                    <br />
+                    <span className="il-meta">
+                      <span className="il-src">{d.source}</span> · {r.issue_date} · {fmtSecs(readSecs(r))}読了
+                      {readSecs(r) < SHORT_READ_SECONDS && <span className="il-short"> · 短時間離脱</span>}
+                    </span>
+                    {d.tags.length > 0 && <div className="il-tags">タグ: {d.tags.join(' / ')}</div>}
+                    {d.bodyText ? (
+                      <details className="il-snap">
+                        <summary>本文スナップショットあり（クリックで表示）</summary>
+                        <pre className="il-snap-body">{d.bodyText}</pre>
+                      </details>
+                    ) : (
+                      <div className="il-meta">本文スナップショット: なし</div>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
 
-        <div className="il-card il-span2">
-          <h2>推定滞留が長い記事 <span className="il-hint">外部サイト滞留の推定値（不正確・上限30分）</span></h2>
-          {longDwell.length === 0 ? (
-            <p className="il-empty">外部リンクの滞留推定データはまだありません。</p>
+        {/* === 集計 (読書秒数ベース) === */}
+        <div className="il-card">
+          <h2>ソース別 合計読書時間 <span className="il-hint">秒</span></h2>
+          <Bar rows={bySourceSecs} />
+        </div>
+        <div className="il-card">
+          <h2>カテゴリ別 合計読書時間 <span className="il-hint">秒</span></h2>
+          <Bar rows={byCategorySecs} />
+        </div>
+        <div className="il-card">
+          <h2>タグ別 合計読書時間 <span className="il-hint">秒</span></h2>
+          <Bar rows={byTagSecs} />
+        </div>
+        <div className="il-card">
+          <h2>デバイス別 合計読書時間 <span className="il-hint">秒</span></h2>
+          <Bar rows={byDeviceSecs} />
+        </div>
+        <div className="il-card">
+          <h2>曜日別 合計読書時間 <span className="il-hint">秒</span></h2>
+          <Bar rows={byWeekdaySecs} />
+        </div>
+        <div className="il-card">
+          <h2>時間帯別 合計読書時間 <span className="il-hint">秒</span></h2>
+          <Bar rows={byHourSecs} />
+        </div>
+
+        <div className="il-card">
+          <h2>読書時間が長い記事</h2>
+          {longReads.length === 0 ? (
+            <p className="il-empty">データなし</p>
           ) : (
             <ul className="il-list">
-              {longDwell.map((r, i) => (
-                <li key={(r.article_id || '') + i}>
-                  <span className="il-src">{r.source}</span> {r.title || r.article_id}
-                  <span className="il-meta"> — 約 {Math.round((r.estimated_external_dwell_seconds || 0) / 60)} 分（推定）</span>
-                </li>
-              ))}
+              {longReads.map((r, i) => {
+                const d = resolveDisplay(r, catalog);
+                return (
+                  <li key={(r.article_id || '') + i}>
+                    <span className="il-title">{d.title}</span>
+                    <br />
+                    <span className="il-meta"><span className="il-src">{d.source}</span> · {fmtSecs(readSecs(r))}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+
+        <div className="il-card">
+          <h2>クリックしたが短時間で離脱 <span className="il-hint">{SHORT_READ_SECONDS}秒未満</span></h2>
+          {shortLeave.length === 0 ? (
+            <p className="il-empty">データなし</p>
+          ) : (
+            <ul className="il-list">
+              {shortLeave.map((r, i) => {
+                const d = resolveDisplay(r, catalog);
+                return (
+                  <li key={(r.article_id || '') + i}>
+                    <span className="il-title">{d.title}</span>
+                    <br />
+                    <span className="il-meta"><span className="il-src">{d.source}</span> · {fmtSecs(readSecs(r))}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+
+        {/* === 補助: 外部リンククリック === */}
+        <div className="il-card il-span2">
+          <h2>外部原文クリック（補助） <span className="il-hint">クリック {clicks.length} 件 / 外部 {outbounds.length} 件 · 推定外部滞留は不正確・上限30分</span></h2>
+          {recentOutbounds.length === 0 ? (
+            <p className="il-empty">外部原文へのクリックはまだありません。</p>
+          ) : (
+            <ul className="il-list">
+              {recentOutbounds.map((r, i) => {
+                const d = resolveDisplay(r, catalog);
+                const ext = r.estimated_external_dwell_seconds || 0;
+                return (
+                  <li key={(r.article_id || '') + i}>
+                    <span className="il-title">{d.title}</span>
+                    <br />
+                    <span className="il-meta">
+                      <span className="il-src">{d.source}</span> · {ext > 0 ? `推定外部滞留 ${fmtSecs(ext)}（推定）` : '推定外部滞留 未計測'}
+                    </span>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>

@@ -34,24 +34,37 @@ Firebase Authentication の Authorized domains に以下が登録されている
 
 ## Firestore collection: `reading_events`
 
-記事クリック 1 回につき 1 document（`event_id` を doc id に採用、`setDoc(merge)` で冪等＝再送しても二重登録されない）。
+`event_id` を doc id に採用、`setDoc(merge)` で冪等＝再送しても二重登録されない。
 
-主なフィールド:
+### イベント種別（KPI は「読書時間」中心）
 
+| event_type | 位置づけ | 説明 |
+|---|---|---|
+| **`article_detail_read`** | **最重要（主分析対象）** | 記事詳細ページの読書セッション。開いた時点で1 doc作成し、滞留秒数とその時点の記事スナップショットを保存。離脱のたびに `setDoc(merge)` で更新 |
+| `article_click` | 入口ログ（補助） | 一覧/トップで記事カードをクリック |
+| `outbound_click` | 補助 | 記事詳細の「View original ↗」で外部原文へ離脱 |
+| `interest_dashboard_view` | 補助 | My Interest を開いた（セッション1回・最小限） |
+
+`article_detail_read` の doc id（= read session id）は `article_detail_read_{device_id}_{session_id}_{article_id}`。同じ session × 同じ記事は同じ doc を merge 更新する。
+
+### 主なフィールド
+
+共通: `event_id, event_type, user_email, uid, device_id, session_id, clicked_at, clicked_date, clicked_hour, weekday, article_id, title, source, section, category, tags, issue_date, article_url, is_mobile, created_at, updated_at, synced_at`
+
+`article_detail_read` 追加: `read_started_at, read_ended_at, dashboard_dwell_seconds`
+
+**記事スナップショット**（CMS が将来変わっても当時読んだ内容を再現するため）:
 ```
-event_id, user_email, uid, device_id, session_id,
-clicked_at, clicked_date, clicked_hour, weekday,
-article_id, title, source, category, section, issue_date, article_url,
-dashboard_page, referrer_type, event_type,
-user_agent, viewport_width, viewport_height, is_mobile,
-dashboard_dwell_seconds, estimated_external_dwell_seconds,
-created_at, synced_at
+article_snapshot_title, article_snapshot_summary, article_snapshot_body_text,
+article_snapshot_source, article_snapshot_section, article_snapshot_category,
+article_snapshot_tags, article_snapshot_issue_date, article_snapshot_url,
+article_snapshot_captured_at
 ```
 
-`event_type`: `article_click` / `outbound_click` / `dashboard_view` / `interest_dashboard_view`
-
-- `article_id` は既存の安定 ID（`"{section}-YYYY-MM-DD"`）をそのまま使用。
-- `estimated_external_dwell_seconds` は **外部サイト滞留の推定値**。外部リンククリック時刻と Dashboard へ戻った時刻の差分で、**上限 30 分（1800 秒）で cap**。正確な外部滞留時間ではない。
+- `article_id` は既存の安定 ID（`"{section}-YYYY-MM-DD"`）。`title` は記事 frontmatter の `summary`（この CMS の `title` は「ソース名｜日付」で個別見出しが無いため）。
+- `dashboard_dwell_seconds` は **Dashboard 内の記事詳細を読んでいた秒数**（整数・上限 1800 秒）。これが本命の指標。
+- `article_snapshot_body_text` は記事詳細に表示中の本文プレーンテキスト（最大 20,000 文字で truncate）。取得できなくても summary/tags/source/section/issue_date は保存。
+- `estimated_external_dwell_seconds` は **外部サイト滞留の推定値（補助・不正確）**。外部リンククリック〜Dashboard 復帰の差分、**上限 30 分（1800 秒）で cap**。
 
 ---
 
@@ -139,43 +152,41 @@ npm run build      # 静的エクスポート (output: 'export')
 
 ## 受け入れ確認チェックリスト（本番 = main マージ後）
 
-ログは大きく 2 種類ある。両方が記録されることを確認する。
-
-1. **`article_click`** — トップ／一覧の記事カードをクリック（内部の `/issues/{date}/{slug}/` 記事詳細へ遷移）したときの記録。
-2. **`outbound_click`** — 記事詳細ページ内の外部原文リンク **「View original ↗」** を押し、外部サイトへ飛んだときの記録。戻ると同 doc に `estimated_external_dwell_seconds`（推定値）が追記される。
-
-> 本当に見たい指標は「どの記事を開いたか」だけでなく「どの記事から外部原文へ飛んだか／どのソースへ飛んだか／飛んでから戻るまでの推定時間」。
-> そのため確認では **記事カードのクリックだけでなく、必ず記事詳細ページの外部リンクも押すこと。**
+最重要は **`article_detail_read`（記事詳細ページの読書セッション）**。外部リンクは補助。
 
 ### 手順（Mac）
 
 1. Mac Safari で `https://th1214.github.io/newsletter-dashboard/` を開く。
 2. ナビの **「★ My Interest」** → **Sign in with Google** → `hashiramoto@mellowps.com` でログイン。
-3. トップへ戻り、**記事カードを1つクリック**（→ `article_click`）。
-4. 開いた記事詳細ページ末尾の **「View original ↗」を押す**（→ `outbound_click`）。外部サイトを数秒見てタブを戻る（→ `estimated_external_dwell_seconds` 追記）。
-5. Firebase Console → Firestore Database → `reading_events` collection を開いて document を確認。
+3. トップへ戻り、記事カードを1つクリック → **記事詳細ページを約10秒開いて**から戻る/別ページへ。
+4. 別の記事詳細を **約30秒開いて**から戻る。
+5. 記事詳細の **「View original ↗」** も押す（→ 補助の `outbound_click`）。
+6. Firebase Console → Firestore Database → `reading_events` で `event_type == article_detail_read` の document を確認。
 
 ### 手順（iPhone・5G）
 
-6. iPhone Safari を **Wi-Fi を切って 5G** にして同じ URL を開く。
-7. 同じ Google アカウントでログイン。
-8. **記事カードを1つクリック**（→ `article_click`）。可能なら記事詳細で **View original** も押す（→ `outbound_click`）。
-9. Mac で `/interest/`（My Interest）を開き、**iPhone でクリックした履歴も統合表示**されることを確認（同期ボタン・export/import なし）。
+7. iPhone Safari を **Wi-Fi を切って 5G** にして同じ URL を開く。
+8. 同じ Google アカウントでログイン。
+9. 記事詳細ページを開いて数十秒読む。
+10. Mac で `/interest/`（My Interest）を開き、**iPhone の読書セッションも統合表示**されることを確認（同期ボタン・export/import なし）。
 
-### Firestore 上で確認すべきフィールド（`reading_events` の各 document）
+### Firestore 上で確認すべきフィールド（`article_detail_read` の document）
 
 | 確認項目 | フィールド | 期待値 |
 |---|---|---|
-| 記事クリックが残るか | `event_type` | `article_click` |
-| 外部原文クリックが残るか | `event_type` | `outbound_click` |
-| ソースが入っているか | `source` | 例: `WSJ 10-Point` / `NYT Breaking News` |
-| カテゴリ/セクションが入っているか | `category` または `section` | `category`=タグ等 / `section`=`wsj` 等の slug |
-| 記事URLが入っているか | `article_url` | `/issues/{date}/{slug}/` |
-| 外部滞留の推定値（戻り後） | `estimated_external_dwell_seconds` | 0 より大、最大 1800（30分cap・推定値） |
-| 本人記録か | `user_email` | `hashiramoto@mellowps.com` |
-| 端末識別 | `device_id` / `is_mobile` | Mac と iPhone で別 `device_id`、iPhone は `is_mobile=true` |
+| 読書セッションが残るか | `event_type` | `article_detail_read` |
+| 読書秒数（約10秒/約30秒） | `dashboard_dwell_seconds` | 整数秒（例 約10 / 約30）、上限1800 |
+| 実タイトル | `title` / `article_snapshot_title` | summary（ソース名でない） |
+| 本文スナップショット | `article_snapshot_body_text` | プレーン本文（最大2万字） |
+| 要約スナップショット | `article_snapshot_summary` | 1行要約 |
+| ソース | `source` / `article_snapshot_source` | 例: `NYT DealBook` |
+| セクション/カテゴリ/タグ | `section` / `category` / `tags` | slug / タグ / 配列 |
+| 記事URL | `article_url` | `/issues/{date}/{slug}/` |
+| 本人記録 | `user_email` | `hashiramoto@mellowps.com` |
+| 端末識別 | `device_id` / `is_mobile` | Mac/iPhone で別 `device_id`、iPhone は `is_mobile=true` |
+| （補助）外部滞留推定 | `estimated_external_dwell_seconds` | 0より大・最大1800・推定 |
 
-**合格ライン（実用上 OK）**: `article_click` と `outbound_click` の両方が保存され、`source`・(`section` または `category`)・`article_url` が入っており、iPhone のログが Mac の `/interest/` に出ること。
+**合格ライン**: `article_detail_read` が保存され、`dashboard_dwell_seconds` が秒で入り、`article_snapshot_summary`/`article_snapshot_body_text` と `source` が入っていること。My Interest の「最近読んだ記事」に実タイトル＋読書秒数が出て、ソース別・カテゴリ別が**読書秒数ベース**で表示され、iPhone の読書も Mac に統合表示されること。
 
 ### うまくいかない場合
 
