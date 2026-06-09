@@ -16,6 +16,7 @@ on:
 
 permissions:
   contents: write
+  models: read
 
 jobs:
   regen:
@@ -38,6 +39,10 @@ jobs:
       - name: Regenerate hero images
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          # GEMINI_API_KEY 未設定時のキーワード生成フォールバック (GitHub Models)
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_MODELS_ENDPOINT: https://models.github.ai/inference
+          GITHUB_MODELS_MODEL: openai/gpt-4o-mini
         run: |
           ALL_SOURCES="nyt-bn wsj dealbook economist business-insider skift buysiders short-squeez nyt-op"
 
