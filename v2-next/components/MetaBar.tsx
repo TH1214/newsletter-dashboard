@@ -1,8 +1,7 @@
 import type { Issue } from '@/lib/content';
 
 export function MetaBar({ issue, suffix }: { issue: Issue; suffix?: string }) {
-  const [y, mo, da] = issue.date.split('-').map(Number);
-  const d = new Date(Date.UTC(y, mo - 1, da));
+  const d = new Date(issue.date + 'T06:00:00+09:00');
   const wd = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getUTCDay()];
   const month = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getUTCMonth()];
   const left = `Vol. 06 / ${d.getUTCFullYear()}` + ` · Issue ${issue.number}${suffix ? ' · ' + suffix : ''}`;
