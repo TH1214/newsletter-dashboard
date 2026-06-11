@@ -17,7 +17,7 @@ export const SECTIONS = [
   { slug: 'hospitality-net', label: 'Hospitality Net Daily Brief',  eyebrow: 'HOSPITALITY · REAL ESTATE' },
   { slug: 'pere',            label: 'PERE',                         eyebrow: 'PRIVATE EQUITY · REAL ESTATE' },
   { slug: 'maverick',        label: 'Maverick AI',                  eyebrow: 'AI TOOLS · MAVERICK' },
-  { slug: 'musha',           label: '武者リサーチ',                  eyebrow: 'STRATEGY · MACRO' },
+  { slug: 'musha',           label: 'MUSHA',                        eyebrow: 'STRATEGY · MACRO' },
   { slug: 'nikkei-hack',     label: 'Nikkei Hack',                  eyebrow: 'NIKKEI · MY CLIPPINGS' },
 ] as const;
 
