@@ -16,6 +16,7 @@ export const SECTIONS = [
   { slug: 'cnbc-squawk',      label: 'CNBC Morning Squawk',          eyebrow: 'MARKETS · MORNING BRIEF' },
   { slug: 'hospitality-net', label: 'Hospitality Net Daily Brief',  eyebrow: 'HOSPITALITY · REAL ESTATE' },
   { slug: 'pere',            label: 'PERE',                         eyebrow: 'PRIVATE EQUITY · REAL ESTATE' },
+  { slug: 'maverick',        label: 'Maverick AI',                  eyebrow: 'AI TOOLS · MAVERICK' },
   { slug: 'nikkei-hack',     label: 'Nikkei Hack',                  eyebrow: 'NIKKEI · MY CLIPPINGS' },
 ] as const;
 

@@ -31,6 +31,7 @@ cnbc → ソース名: CNBC Breaking News, カテゴリ: CNBC
 cnbc-squawk → ソース名: CNBC Morning Squawk, カテゴリ: Squawk
 hospitality-net → ソース名: Hospitality Net Daily Brief, カテゴリ: Hospitality Net
 pere → ソース名: PERE, カテゴリ: PERE
+maverick → ソース名: Maverick AI, カテゴリ: Maverick / AI Tools
 
 【レポート構成】
 1. 出典セクション: 「## 出典」+ 原文リンク
@@ -74,6 +75,39 @@ CNBCは1日20〜30通届く速報型ニュースレターです。通常の「**
   - エディトリアル本文を全文翻訳し、McKinsey品質の詳細解説を付ける
 - 出力形式は他ソースと同一のfront matterテンプレートに従う
 - PEREは Private Equity Real Estate（不動産プライベートエクイティ）の略称。不動産ファンド、LP/GP関係、ファンドレイジング、投資戦略に関する専門媒体
+
+【Maverick AI 固有ルール (SOURCE_SLUG: maverick)】
+Maverick AIは週2回（水・日）配信の、消費者向けAI活用Tips＋アフィリエイト誘導型ニュースレター。
+報道系ではないため「全訳」ではなく「選択的処理」を行う。固定ブロック構造を検出して振り分ける。
+
+■ 固定ブロック構造（全号共通）:
+  ① ヘッダー（MAVERICK AI ロゴ / Forwarded this? Subscribe here）
+  ② 挨拶（Happy Wednesday/Sunday,）
+  ③ イントロ予告文（＋ Let's get into it.）
+  ④ 目次（IN THIS EMAIL, » 付き）
+  ⑤ 本文セクション 5〜6本（kicker[絵文字＋大文字] → 見出し → 画像 → 本文 → CTA）
+  ⑥ 署名（See you …, / Maverick）
+  ⑦ P.S.（AIコンサル勧誘）/ P.P.S.（アーカイブ案内）
+  ⑧ フッター（SNS / 住所 / Unsubscribe / © 2026）
+
+■ 処理マトリクス（厳守）:
+  - 【除外・出力しない】 ①ヘッダー / ②挨拶 / ③イントロ予告 / ⑥署名 / ⑦P.S.・P.P.S. / ⑧フッター
+  - 【全訳】 ④目次 / ⑤の「機能・コネクタ・Product紹介＋設定・操作手順」セクション
+  - 【全訳(リストのみ)】 ⑤のツール一覧・ランキング（固有名詞は原綴、解説文は要約）
+  - 【要約 3〜5行】 ⑤のメインAIニュース（製品名・数値は転記、主観/煽り表現は圧縮）/ ⑤QUICK UPDATES（短信）
+  - 【スポンサー枠】 ⑤の kicker が「PAID INTEGRATION」のセクション
+      → 全訳。ただしセクション冒頭に必ず **【PR】** ラベルを付与する。
+
+  セクション種別は kicker（例: 📡 PAID INTEGRATION）と見出し文言で判定する。
+
+■ Verbatim（全訳セクション内でも“翻訳せず原文のまま転記”。再現性担保のため必須）:
+  以下は英語/原文のまま転記し、日本語は趣旨注記に留める:
+  - コピペ用プロンプト本文（例: ヘッドショット生成、20年後加齢 等）
+  - UI文字列・メニュー名（例: Customize → Connectors, Use Canva, Add custom connector）
+  - URL・接続先・入力値（例: https://ai.metricool.com/mcp）
+  - コマンド（例: /compact, SWAT, /premortem, STEELMAN, REDTEAM）
+
+■ 出力形式は他ソースと同一の front matter テンプレートに従う（categories は「Maverick / AI Tools」）。
 
 【翻訳スタイル】
 - McKinsey/BCGクラスのコンサルティングレポート品質
