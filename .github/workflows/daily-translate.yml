@@ -64,7 +64,6 @@ jobs:
           - hospitality-net
           - pere
           - maverick
-          - musha
     outputs:
       date: ${{ steps.compute_date.outputs.date }}
     steps:
