@@ -3680,3 +3680,14 @@ body.menu-open .overlay { transform: translateY(0); }
 @media (max-width: 480px) {
   .back-to-top { right: 14px; bottom: 14px; width: 36px; height: 36px; }
 }
+
+/* ==================================================================
+   セクションナビ 折り返し対応 (ソース増加で右側が見切れ選択不能になる問題の修正)
+   nowrap+横スクロール(スクロールバー非表示)では右端項目に到達できないため、
+   折り返して全ソースを常に選択可能にする。加算的override。
+   ================================================================== */
+.bl-secnav-inner {
+  flex-wrap: wrap;
+  overflow-x: visible;
+  row-gap: 4px;
+}
