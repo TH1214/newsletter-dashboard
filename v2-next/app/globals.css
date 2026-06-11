@@ -3614,3 +3614,69 @@ body.menu-open .overlay { transform: translateY(0); }
   .wb-sec-hero .wb-h1 { font-size: 30px !important; }
   .wb-sec-grid-section { padding: 0 14px !important; }
 }
+
+/* ==================================================================
+   §6 UI 改修 (加算的 override / 既存ルールは変更せず末尾で上書き)
+   - バーガーメニュー縮小: 全ソース(17件+)を1画面で見渡せるように
+   - 全ページ「Topに戻る」ボタン
+   ================================================================== */
+
+/* 6.1 バーガーメニュー: 項目を縮小して全件を収める */
+.bm-primary a,
+.bm-sources a {
+  padding: 8px 0;            /* 14px → 8px */
+}
+.bm-primary .bm-label,
+.bm-sources .bm-label {
+  font-size: 14px;           /* 18px → 14px */
+  line-height: 1.25;
+}
+.bm-primary .bm-arrow,
+.bm-sources .bm-arrow {
+  font-size: 13px;
+}
+.bm-nav {
+  overflow-y: auto;          /* 万一あふれてもメニュー内スクロールで全件到達可 */
+}
+/* モバイル全画面ドロワーでも同様に縮小 */
+@media (max-width: 480px) {
+  .bm-primary a,
+  .bm-sources a { padding: 8px 0; }
+  .bm-primary .bm-label,
+  .bm-sources .bm-label { font-size: 13px; line-height: 1.25; }
+}
+
+/* 6.2 Topに戻るボタン (白黒・非装飾・控えめ) */
+.back-to-top {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 1200;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  color: #000;
+  border: 1px solid #000;
+  border-radius: 0;          /* 角丸なし=既存の硬質トーン */
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(8px);
+  transition: opacity 0.2s, visibility 0.2s, transform 0.2s, background 0.2s, color 0.2s;
+}
+.back-to-top.is-visible {
+  opacity: 0.85;
+  visibility: visible;
+  transform: translateY(0);
+}
+.back-to-top:hover {
+  opacity: 1;
+  background: #000;
+  color: #fff;
+}
+@media (max-width: 480px) {
+  .back-to-top { right: 14px; bottom: 14px; width: 36px; height: 36px; }
+}

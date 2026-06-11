@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { InterestLogger } from '@/components/interest/InterestLogger';
+import { BackToTop } from '@/components/BackToTop';
 
 export const metadata: Metadata = {
   title: {
@@ -69,6 +70,8 @@ export default function RootLayout({
         {children}
         {/* Personal Interest Log — 全ページ共通のクリック記録ランナー (renders null) */}
         <InterestLogger />
+        {/* 全ページ共通「Topに戻る」ボタン */}
+        <BackToTop />
       </body>
     </html>
   );
