@@ -71,7 +71,10 @@ export function getAllArticles(): Article[] {
         const h = useWebp ? pngBasename.replace(/\.png$/, '.webp') : pngBasename;
         heroImage = h.startsWith('http') ? h : '/newsletter-dashboard' + h.replace(/^\/+/, '/');
       }
-      const html = String(remark().use(remarkGfm).use(remarkHtml).processSync(content));
+      // 本文インライン画像 (例: 武者の図表) は basePath が自動付与されないため、
+      // remarkHtml 出力の <img src="/images/..."> に basePath を補正する (加算的・既存ソース無影響)。
+      const htmlRaw = String(remark().use(remarkGfm).use(remarkHtml).processSync(content));
+      const html = htmlRaw.replace(/(<img[^>]+src=")\/images\//g, '$1/newsletter-dashboard/images/');
       const wordCount = content.replace(/\s+/g, ' ').trim().length;
       const readMinutes = Math.max(2, Math.round(wordCount / 600));
       out.push({
