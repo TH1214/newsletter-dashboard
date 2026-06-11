@@ -18,7 +18,7 @@ export const SECTIONS = [
   { slug: 'pere',            label: 'PERE',                         eyebrow: 'PRIVATE EQUITY · REAL ESTATE' },
   { slug: 'maverick',        label: 'Maverick AI',                  eyebrow: 'AI TOOLS · MAVERICK' },
   { slug: 'musha',           label: 'MUSHA',                        eyebrow: 'STRATEGY · MACRO' },
-  { slug: 'nikkei-hack',     label: 'Nikkei Hack',                  eyebrow: 'NIKKEI · MY CLIPPINGS' },
+  { slug: 'nikkei-hack',     label: 'My CLIP',                  eyebrow: 'NIKKEI · MY CLIPPINGS' },
 ] as const;
 
 export type SectionSlug = (typeof SECTIONS)[number]['slug'];
