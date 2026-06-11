@@ -17,6 +17,7 @@ const SHORT: Record<string, string> = {
   'hospitality-net': 'HN',
   'pere': 'PERE',
   'maverick': 'Maverick',
+  'musha': '武者リサーチ',
 };
 
 export function SectionNav() {
