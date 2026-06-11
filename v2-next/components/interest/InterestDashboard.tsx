@@ -149,6 +149,19 @@ function fmtSecs(s: number): string {
   return `${s}秒`;
 }
 
+/** 読み始めた時刻を「M/D HH:MM」(JST)で表示。無ければ空。 */
+function fmtReadStart(r: EventRow): string {
+  const iso = r.read_started_at || r.clicked_at || r.updated_at || '';
+  if (!iso) return '';
+  const dt = new Date(iso);
+  if (isNaN(dt.getTime())) return '';
+  return dt.toLocaleString('ja-JP', {
+    timeZone: 'Asia/Tokyo',
+    month: 'numeric', day: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  });
+}
+
 /** keyFn ごとに値(秒など)を合計。 */
 function sumBy(rows: EventRow[], key: (r: EventRow) => string | undefined, val: (r: EventRow) => number) {
   const m = new Map<string, number>();
@@ -351,7 +364,8 @@ export function InterestDashboard({ catalog = {} }: { catalog?: ArticleCatalog }
                     <span className="il-title">{d.title}</span>
                     <br />
                     <span className="il-meta">
-                      <span className="il-src">{d.source}</span> · {r.issue_date} · {fmtSecs(readSecs(r))}読了
+                      <span className="il-src">{d.source}</span> · {r.issue_date}
+                      {fmtReadStart(r) && <> · 読み始め {fmtReadStart(r)}</>} · {fmtSecs(readSecs(r))}読了
                       {readSecs(r) < SHORT_READ_SECONDS && <span className="il-short"> · 短時間離脱</span>}
                     </span>
                     {d.tags.length > 0 && <div className="il-tags">タグ: {d.tags.join(' / ')}</div>}
