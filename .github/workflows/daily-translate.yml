@@ -326,14 +326,32 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          # 翻訳成果物を取り込む前に origin/main へ追従しておく
+          # (backfill / nikkei-hack 等の並行コミットで checkout 時点から HEAD が進み、
+          #  素の push が non-fast-forward で reject → 成功した翻訳が丸ごと破棄される事故を防止)
+          git pull --rebase --autostash origin main
           git add content/ static/images/ 2>/dev/null || git add content/
           if git diff --cached --quiet; then
             echo "No new translations or images to commit"
           else
             CHANGED=$(git diff --cached --name-only | wc -l)
             git commit -m "Daily newsletter translation $DATE [${CHANGED} file(s)]"
-            git push
-            echo "✅ Pushed ${CHANGED} file(s)"
+            # push が並行コミットと競合したら rebase して最大3回リトライ
+            PUSHED="false"
+            for attempt in 1 2 3; do
+              if git push; then
+                PUSHED="true"
+                break
+              fi
+              echo "⚠️ push rejected (attempt ${attempt}/3); rebasing onto latest main and retrying"
+              git pull --rebase --autostash origin main
+            done
+            if [ "$PUSHED" = "true" ]; then
+              echo "✅ Pushed ${CHANGED} file(s)"
+            else
+              echo "❌ push failed after 3 attempts"
+              exit 1
+            fi
           fi
 
       - name: Notify on critical failure (P0 #2)
