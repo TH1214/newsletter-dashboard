@@ -47,7 +47,7 @@ jobs:
       TZ: Asia/Tokyo
     strategy:
       fail-fast: false
-      max-parallel: 1  # github_models 10 RPM制限: 並列3だと25RPM超でcnbc-squawkが常時429→直列で8RPM以下
+      max-parallel: 1  # github_models のレート制限を避けるため直列実行 (gpt-4o-mini: 15 RPM / 150 req per day)
       matrix:
         source:
           - nyt-bn
@@ -123,7 +123,11 @@ jobs:
           # GROQ_API_KEY は GitHub Actions IP が Cloudflare 1010 でブロックされるため無効化
           # 有効化すると全チャンクで 403→fallback の無駄な遅延が発生する
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TRANSLATION_MODEL: openai/gpt-4.1
+          # gpt-4.1 は GitHub Models 無料枠の High tier = 50 req/日 しかなく、
+          # 平日の全ソース翻訳 (~65 req/日) で日次上限を超過 → 後半ソースが常時 429 で
+          # FAILED_TRANSLATE になっていた (週末は休刊が多く 50 以内に収まり成功)。
+          # Low tier (gpt-4o-mini) は 150 req/日 で余裕。batch-backfill.yml も既に gpt-4o-mini。
+          TRANSLATION_MODEL: openai/gpt-4o-mini
           GITHUB_MODELS_ENDPOINT: https://models.github.ai/inference
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           CHUNK_CHAR_LIMIT: "12000"
