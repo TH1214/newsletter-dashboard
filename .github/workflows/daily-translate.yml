@@ -126,11 +126,12 @@ jobs:
           # gpt-4.1 は GitHub Models 無料枠の High tier = 50 req/日 しかなく、
           # 平日の全ソース翻訳 (~65 req/日) で日次上限を超過 → 後半ソースが常時 429 で
           # FAILED_TRANSLATE になっていた (週末は休刊が多く 50 以内に収まり成功)。
-          # Low tier (gpt-4o-mini) は 150 req/日 で余裕。batch-backfill.yml も既に gpt-4o-mini。
+          # Low tier (gpt-4o-mini) は 150 req/日。チャンク36kで1ソースあたり呼び出し数を
+          # 約1/3に削減し、14ソース合計 ~25 req/日 に収める。
           TRANSLATION_MODEL: openai/gpt-4o-mini
           GITHUB_MODELS_ENDPOINT: https://models.github.ai/inference
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          CHUNK_CHAR_LIMIT: "12000"
+          CHUNK_CHAR_LIMIT: "36000"
           UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
           SOURCE: ${{ matrix.source }}
           TODAY: ${{ steps.compute_date.outputs.date }}
