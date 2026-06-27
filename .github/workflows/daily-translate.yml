@@ -42,7 +42,7 @@ jobs:
   # ─────────────────────────────────────────────────────────────
   translate:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 60
     env:
       TZ: Asia/Tokyo
     strategy:
@@ -64,6 +64,9 @@ jobs:
           - hospitality-net
           - pere
           - maverick
+          - axios-daily
+          - axios-ai
+          - axios-frontier
     outputs:
       date: ${{ steps.compute_date.outputs.date }}
     steps:
@@ -144,7 +147,7 @@ jobs:
           # buysiders は 月曜 (週次) のみ配信 / maverick は 水・日 (週2回) / musha は月2〜3回不定期 / 他は基本毎日。
           # 該当しない曜日は no-email を warning ではなく info で報告 (ログノイズ削減)。
           DOW=$(date -d "$TODAY" +%u)  # 1=Mon ... 7=Sun
-          WEEKLY_SOURCES="buysiders maverick musha"
+          WEEKLY_SOURCES="buysiders maverick musha axios-frontier"
           IS_WEEKLY="false"
           if echo "$WEEKLY_SOURCES" | tr ' ' '\n' | grep -qx "$SOURCE"; then
             IS_WEEKLY="true"
