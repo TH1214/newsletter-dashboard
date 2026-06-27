@@ -81,7 +81,7 @@ jobs:
           dates = []
           d = start
           while d <= end:
-              if d.weekday() < 5:
+              if True:
                   dates.append(d.strftime('%Y-%m-%d'))
               d += timedelta(1)
 
