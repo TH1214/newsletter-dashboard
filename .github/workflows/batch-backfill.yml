@@ -61,7 +61,7 @@ jobs:
           GMAIL_REFRESH_TOKEN: ${{ secrets.GMAIL_REFRESH_TOKEN }}
           # GROQ_API_KEY 無効化 (GitHub Actions IP が Cloudflare 1010 ブロック)
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TRANSLATION_MODEL: openai/gpt-4.1
+          TRANSLATION_MODEL: openai/gpt-4o-mini
           GITHUB_MODELS_ENDPOINT: https://models.github.ai/inference
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           CHUNK_CHAR_LIMIT: "24000"
