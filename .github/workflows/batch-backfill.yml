@@ -64,7 +64,9 @@ jobs:
           TRANSLATION_MODEL: openai/gpt-4o-mini
           GITHUB_MODELS_ENDPOINT: https://models.github.ai/inference
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          CHUNK_CHAR_LIMIT: "24000"
+          # gpt-4o-mini の入力上限は 8000 tokens。prompt(~3.5k tok)+chunk が超えると HTTP 413。
+          # Axios統合(複数ニュースレター連結)は大きく 24000 だと 413 になるため 12000 に縮小。
+          CHUNK_CHAR_LIMIT: "12000"
         run: |
           set -euo pipefail
 
