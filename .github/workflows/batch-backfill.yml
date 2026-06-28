@@ -128,7 +128,9 @@ jobs:
               fi
 
               mkdir -p "content/${SOURCE}"
-              if python scripts/translate_gemini.py "$SOURCE" "$DATE" \
+              TR_SCRIPT=scripts/translate_gemini.py
+              case "$SOURCE" in axios-*) TR_SCRIPT=scripts/translate_axios.py ;; esac
+              if python "$TR_SCRIPT" "$SOURCE" "$DATE" \
                      < "/tmp/email_${SOURCE}.txt" \
                      > "/tmp/tr_${SOURCE}.md" 2>/tmp/tr_err.txt \
                  && [ -s "/tmp/tr_${SOURCE}.md" ] \

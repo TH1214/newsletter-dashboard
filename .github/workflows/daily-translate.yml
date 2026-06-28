@@ -200,7 +200,10 @@ jobs:
           mkdir -p "content/${SOURCE}"
           echo "🤖 Translating $SOURCE with fallback-enabled translator..."
 
-          python scripts/translate_gemini.py "$SOURCE" "$TODAY" \
+          # Axios 統合ソースはメンバー単位個別翻訳の専用トランスレータを使う
+          TR_SCRIPT=scripts/translate_gemini.py
+          case "$SOURCE" in axios-*) TR_SCRIPT=scripts/translate_axios.py ;; esac
+          python "$TR_SCRIPT" "$SOURCE" "$TODAY" \
             < "/tmp/email_${SOURCE}.txt" \
             > "/tmp/translated_${SOURCE}.md" \
             2>/tmp/tr_err.txt
