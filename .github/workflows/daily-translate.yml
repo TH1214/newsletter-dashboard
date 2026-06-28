@@ -42,7 +42,7 @@ jobs:
   # ─────────────────────────────────────────────────────────────
   translate:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 60
     env:
       TZ: Asia/Tokyo
     strategy:
@@ -64,6 +64,9 @@ jobs:
           - hospitality-net
           - pere
           - maverick
+          - axios-daily
+          - axios-ai
+          - axios-frontier
     outputs:
       date: ${{ steps.compute_date.outputs.date }}
     steps:
@@ -131,7 +134,9 @@ jobs:
           TRANSLATION_MODEL: openai/gpt-4o-mini
           GITHUB_MODELS_ENDPOINT: https://models.github.ai/inference
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          CHUNK_CHAR_LIMIT: "24000"
+          # gpt-4o-mini の入力上限は 8000 tokens。prompt(~3.5k tok)+chunk が超えると HTTP 413。
+          # Axios統合(複数ニュースレター連結)は大きく 24000 だと 413 になるため 12000 に縮小。
+          CHUNK_CHAR_LIMIT: "12000"
           UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
           SOURCE: ${{ matrix.source }}
           TODAY: ${{ steps.compute_date.outputs.date }}
@@ -144,7 +149,7 @@ jobs:
           # buysiders は 月曜 (週次) のみ配信 / maverick は 水・日 (週2回) / musha は月2〜3回不定期 / 他は基本毎日。
           # 該当しない曜日は no-email を warning ではなく info で報告 (ログノイズ削減)。
           DOW=$(date -d "$TODAY" +%u)  # 1=Mon ... 7=Sun
-          WEEKLY_SOURCES="buysiders maverick musha"
+          WEEKLY_SOURCES="buysiders maverick musha axios-frontier"
           IS_WEEKLY="false"
           if echo "$WEEKLY_SOURCES" | tr ' ' '\n' | grep -qx "$SOURCE"; then
             IS_WEEKLY="true"

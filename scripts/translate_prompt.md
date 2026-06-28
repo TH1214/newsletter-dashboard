@@ -33,6 +33,9 @@ hospitality-net → ソース名: Hospitality Net Daily Brief, カテゴリ: Hos
 pere → ソース名: PERE, カテゴリ: PERE
 maverick → ソース名: Maverick AI, カテゴリ: Maverick / AI Tools
 musha → ソース名: 武者リサーチ ストラテジーブレティン, カテゴリ: 武者リサーチ
+axios-daily → ソース名: Axios Daily, カテゴリ: Axios Daily
+axios-ai → ソース名: Axios AI+PE/MA/VC, カテゴリ: Axios AI+PE/MA/VC
+axios-frontier → ソース名: Axios Def/CAR/2028, カテゴリ: Axios Def/CAR/2028
 
 【レポート構成】
 1. 出典セクション: 「## 出典」+ 原文リンク
@@ -148,6 +151,36 @@ Maverick AIは週2回（水・日）配信の、消費者向けAI活用Tips＋�
   - front matter の categories は ["武者リサーチ"]、tags は本文から主要トピックを3〜5個（日本語）抽出。
   - summary は60字以内で号全体を1行要約。
   - エグゼクティブサマリーも3〜4文・300字以内に圧縮する。
+
+【Axios 統合ルール (SOURCE_SLUG: axios-daily / axios-ai / axios-frontier)】
+入力は複数の Axios ニュースレターを「=== MEMBER: <メンバー名> | <件名> ===」マーカーで
+連結したテキスト。これを1本の統合記事として出力する。
+
+■ 出力構成:
+  1. front matter（title は対応表のソース名で "Axios Daily｜YYYY年M月D日" 等。categories も対応表どおり）
+  2. 「## エグゼクティブサマリー」: そのチャンクに含まれるメンバーの一覧表（#, メンバー名, 一言要約）
+  3. 各メンバーを「## <メンバー名>：<件名の日本語訳>」見出し＋本文の完全翻訳
+     （"=== MEMBER ... ===" マーカー行自体は出力しない。件名を和訳して見出しに使う。
+       メンバーの出現順を保持する）
+
+■ Smart Brevity ラベルの和訳（本文中のラベルは訳して残す）:
+  Why it matters→なぜ重要か / The big picture→全体像 / Driving the news→ニュースの要点 /
+  Between the lines→行間を読む / By the numbers→数字で見る / The bottom line→結論 /
+  What they're saying→関係者の声 / Zoom in→詳細 / State of play→現状 / Go deeper→さらに詳しく
+
+■ Pro Rata（axios-ai 内のメンバー「Axios Pro Rata」）特例:
+  「The BFD」「Venture Capital Deals」「Private Equity Deals」「Public Offerings」
+  「Liquidity Events」「More M&A」「Fundraising」「It's Personnel」「Final Numbers」等の
+  ディールリストは散文化せず箇条書き（- 始まり）のまま和訳する。
+  企業名・投資家名・ティッカー・金額（$50m / $8.4b / €6m 等）・axios.link URL は原文表記のまま転記。
+
+■ ★絶対厳守（gpt-4o-mini が無視しがちなため明示）:
+  - 入力に含まれる全「=== MEMBER ... ===」を1件も省略せず、各メンバーを ## 見出しで出力する。
+  - 万一フェッチ漏れで残った定型文（"A MESSAGE FROM" / "PRESENTED BY" / "Like this comms style" /
+    "Smart Brevity" の宣伝 / "Was this email forwarded" / "Unsubscribe" / "Arlington VA" を含む行）は
+    出力に1文字も含めない。
+  - 分割翻訳の続編チャンクでは front matter・タイトル・エグゼクティブサマリー表を出力せず、
+    メンバー本文（## 見出し＋本文）のみ出力する（CNBC と同一の継続ルール）。
 
 【翻訳スタイル】
 - McKinsey/BCGクラスのコンサルティングレポート品質
