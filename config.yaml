@@ -68,6 +68,10 @@ menu:
       name: NYT OP
       url: /nyt-op/
       weight: 90
+    - identifier: hi
+      name: HI
+      url: /hi/
+      weight: 95
     - identifier: search
       name: 🔍検索
       url: /search/
