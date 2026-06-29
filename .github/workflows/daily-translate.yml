@@ -64,6 +64,7 @@ jobs:
           - hospitality-net
           - pere
           - maverick
+          - hi
           - axios-daily
           - axios-ai
           - axios-frontier
