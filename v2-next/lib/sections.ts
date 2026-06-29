@@ -21,6 +21,7 @@ export const SECTIONS = [
   { slug: 'axios-daily',     label: 'Axios Daily',                  eyebrow: 'NEWS · MARKETS · LIFE' },
   { slug: 'axios-ai',        label: 'Axios AI+PE/MA/VC',            eyebrow: 'AI · DEALS · POLICY' },
   { slug: 'axios-frontier',  label: 'Axios Def/CAR/2028',           eyebrow: 'DEFENSE · MOBILITY · POLITICS' },
+  { slug: 'hi',           label: 'Hospitality Investor', eyebrow: 'HOSPITALITY · INVESTMENT' },
   { slug: 'nikkei-hack',     label: 'My CLIP',                  eyebrow: 'NIKKEI · MY CLIPPINGS' },
 ] as const;
 
