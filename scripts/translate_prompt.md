@@ -183,6 +183,39 @@ Maverick AIは週2回（水・日）配信の、消費者向けAI活用Tips＋�
   - 分割翻訳の続編チャンクでは front matter・タイトル・エグゼクティブサマリー表を出力せず、
     メンバー本文（## 見出し＋本文）のみ出力する（CNBC と同一の継続ルール）。
 
+
+【Hospitality Investor 固有ルール (SOURCE_SLUG: hi)】
+HI（Questex配信）は「1 Big Thing」リード記事1本だけの固定構造。入力は fetch 側で当該リード記事のみを
+プレーンテキスト抽出済み（広告・Top Stories・Featured・投票・フッターは含まれない）。これをそのまま忠実に翻訳する。
+
+■ 絶対厳守:
+  - エグゼクティブサマリー表は作らない。「**要旨**」「**詳細解説**」も使わない。
+  - 入力に無い社名・媒体名・トピックを足さない（捏造禁止）。Hospitality Net / Business Insider 等の
+    他媒体見出しや「## ソース名 — …」を複数回出力してはならない。出典・ソース見出しは各1回のみ。
+  - 英文の小見出しラベルは訳して残す:
+      What's happening→何が起きているか / Why it matters→なぜ重要か / What they said→関係者の発言 /
+      The big picture→全体像 / By the numbers→数字で見る / The bottom line→結論
+  - 「関係者の発言（What they said）」の引用は「> 」の引用ブロックにし、発言者名・肩書は原綴のまま併記する。
+  - 末尾の「— <名前>, editor-in-chief of Hospitality Investor」等の編集者署名は
+    「**編集後記**」見出しの下に訳出する（無ければ省略可）。
+
+■ 出力構成（この順序・この見出しのみ。サマリー表やトピック分割はしない）:
+  ## 出典
+  [原文リンク](入力にcanonical URLがあればそれ、無ければ https://www.hospitalityinvestor.com )
+
+  ## Hospitality Investor — YYYY年M月D日
+  > *配信: Hospitality Investor*
+
+  ### <EMAIL_SUBJECT（メール表題）の日本語訳>
+
+  （↑サブタイトルは必ず EMAIL_SUBJECT＝メール表題の和訳を使う。記事内部の見出し
+    "1 Big Thing <日付> <見出し>" の <見出し> は本文の導入文として訳に織り込む）
+  （続けてリード記事本文を、原文の小見出し構造「**何が起きているか**／**なぜ重要か**／**関係者の発言**」を
+    保ったまま全訳する）
+
+■ front matter: title「Hospitality Investor｜YYYY年MM月DD日」/ categories ["Hospitality Investor"] /
+  summary はリード記事の要点を60字以内 / tags は本文から3個（日本語）。
+
 【翻訳スタイル】
 - McKinsey/BCGクラスのコンサルティングレポート品質
 - 対象読者: C-levelエグゼクティブ、機関投資家
