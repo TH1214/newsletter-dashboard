@@ -36,6 +36,7 @@ musha → ソース名: 武者リサーチ ストラテジーブレティン, �
 axios-daily → ソース名: Axios Daily, カテゴリ: Axios Daily
 axios-ai → ソース名: Axios AI+PE/MA/VC, カテゴリ: Axios AI+PE/MA/VC
 axios-frontier → ソース名: Axios Def/CAR/2028, カテゴリ: Axios Def/CAR/2028
+hi → ソース名: Hospitality Investor, カテゴリ: Hospitality Investor
 
 【レポート構成】
 1. 出典セクション: 「## 出典」+ 原文リンク
