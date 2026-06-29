@@ -18,6 +18,7 @@ const SHORT: Record<string, string> = {
   'pere': 'PERE',
   'maverick': 'Maverick',
   'musha': 'MUSHA',
+  'hi': 'HI',
   'axios-daily': 'Axios Daily',
   'axios-ai': 'Axios AI/Deals',
   'axios-frontier': 'Axios Def/CAR/2028',
