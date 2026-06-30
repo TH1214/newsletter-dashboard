@@ -68,18 +68,44 @@ CNBCは1日20〜30通届く速報型ニュースレターです。通常の「**
 - 出力形式は他ソースと同一のfront matterテンプレートに従う
 
 【PERE 固有ルール (SOURCE_SLUG: pere)】
-- メールは2種類のフォーマットで届く:
-  1. **Daily Digest**（月〜木）: 件名「[曜日]'s news」。「Latest News」セクションにヘッドライン8〜11本 + 「LP Tearsheet」セクションにInvestor Intentions 2〜3件
-  2. **Friday Letter**（金曜）: 件名「Friday Letter: [テーマ]」。週次エディトリアル分析
-- **Daily Digest の翻訳方針**:
-  - 「Latest News」の全ヘッドラインを日本語訳する
-  - 「LP Tearsheet / Investor Intentions」も全件日本語訳する（LP名はそのまま英語で残す）
-  - 「Sponsored」「Click here to learn how to sponsor」等の広告・プロモーション文は除外する
-  - 「Begin a Search」「LP data」「GP data」「Funds in market」等のナビゲーション要素は除外する
-- **Friday Letter の翻訳方針**:
-  - エディトリアル本文を全文翻訳し、McKinsey品質の詳細解説を付ける
-- 出力形式は他ソースと同一のfront matterテンプレートに従う
-- PEREは Private Equity Real Estate（不動産プライベートエクイティ）の略称。不動産ファンド、LP/GP関係、ファンドレイジング、投資戦略に関する専門媒体
+PEREメールは「見出しダイジェスト」。記事本文は有料購読の壁の向こうにあり**メールには含まれない**。
+fetch側で見出し（タイトル）と復元済み正規URLだけを構造化抽出済み。入力先頭行の `PERE_TYPE:` で形式を判別する。
+
+■ 絶対厳守（最重要・過去にハルシネーション事故あり）:
+  - **記事本文を創作してはならない**。入力に無い数値・人物・経緯・分析・市場見通しを一切足さない。
+  - 「要旨」「詳細解説」「エグゼクティブサマリー」等の本文ブロックは作らない。「(1)〜(5)」のような汎用解説も作らない。
+  - 入力に与えられた見出し（とティザー）だけを日本語訳する。各行末の ` | URL` はそのまま出典リンクに使う。
+  - title は「PERE｜<EMAIL_SUBJECTをそのまま>｜YYYY年MM月DD日」。表題は英語のまま改変しない（例: "Tuesday's news" / "Friday Letter: ..."）。categories は ["PERE"]。tags は見出し群から主要テーマ3個（日本語）。summary は当日の主要見出しを60字以内。
+  - 固有名詞・ファンド名・企業名・LP名・金額（$16.6bn 等）は原表記のまま、見出しの意味を自然な日本語に訳す。
+
+■ PERE_TYPE: daily の出力形式:
+  ## 出典
+  [PERE](https://www.perenews.com/)
+
+  ## PERE — YYYY年M月D日
+  > *配信: PERE*
+
+  ## Latest News
+  - [見出しの日本語訳](URL)   ← 入力「=== LATEST NEWS ===」の全件を漏れなく
+  …
+
+  ## LP Tearsheet
+  - [見出しの日本語訳](URL)   ← 入力「=== LP TEARSHEET ===」の全件（投資家名・LP名は英語のまま）
+
+■ PERE_TYPE: friday の出力形式:
+  ## 出典
+  [PERE Friday Letter](https://www.perenews.com/)
+
+  ## PERE — YYYY年M月D日
+  > *配信: PERE / Friday Letter*
+
+  ### HEADLINE の日本語訳
+  TEASER を忠実に全文翻訳（これはメールに実在するティザー1段落）。末尾の「…」以降は有料記事なので**続きを創作しない**。
+
+  ## Best of the week
+  - 各見出しの日本語訳   ← 入力「=== BEST OF THE WEEK ===」の全件（URLは無い場合あり）
+
+■ PERE = Private Equity Real Estate（不動産プライベートエクイティ）。不動産ファンド、LP/GP関係、ファンドレイジング、投資戦略の専門媒体。
 
 【Maverick AI 固有ルール (SOURCE_SLUG: maverick)】
 Maverick AIは週2回（水・日）配信の、消費者向けAI活用Tips＋アフィリエイト誘導型ニュースレター。
