@@ -125,11 +125,14 @@ WSJ「The 10-Point」は毎号きっちり **1〜10 の10点構成**。**必ず1
 
 ■ 絶対厳守:
   - **番号1〜10を必ず全部出す**。メールに存在する点は省略しない（先頭数点で切らない）。
-  - **#1(TODAY'S HEADLINES)・#2(FROM THE MARKETS)は複数記事の束**。束の中の各記事を**箇条書きで漏れなく**出す。
+  - **#1(TODAY'S HEADLINES)・#2(FROM THE MARKETS)は複数記事の束**。束の中の**各記事を、それぞれ独立した「- 」1行**にする。
+    **複数記事を1つの「- 」にまとめない**（gpt-4o-miniが1段落に融合しがちなので厳守）。
+    例: 今号の#1は4本→「- 」4行（Burgum／CQ Brown／韓国タンカー富豪／JPMorgan-Javice）、#2は3本→「- 」3行。
   - 各見出しは**メールのセクションラベルの訳**（ラベルが無い点はその記事の見出しの訳）。汎用テーマ名を創作しない。
   - メール本文に無い分析・要旨・詳細解説・エグゼクティブサマリー表を足さない（忠実翻訳のみ）。
-  - 広告（"Sponsored By" / "CONTENT FROM:" / 別ニュースレター勧誘「Sign up for…」/「Take a break…」）・
-    フッター（About Us / 編集担当クレジット / Unsubscribe）は**出力しない**。
+  - **他ニュースレター勧誘・広告は記事ではない。### 見出しにも本文にも一切含めない**:
+    「Take a break from the news」「Sign up for the WSJ … newsletter」「WSJ Magazine」「Sponsored By」
+    「CONTENT FROM:」等（今号の『休憩を取ろう』を見出しにしたのは誤り）。フッター（About Us / 編集担当クレジット / Unsubscribe）も除外。
   - 固有名詞・数字（例: 57,000 jobs / $15.6 billion / 10.9 billion gallons）は**原表記のまま正確に**転記。
   - front matter: title「WSJ The 10-Point｜YYYY年MM月DD日」/ categories ["WSJ"] /
     summary は当日の主要点を60字以内（実記事ベース・創作しない）/ tags は本文から3個（日本語）。
