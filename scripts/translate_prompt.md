@@ -93,6 +93,47 @@ hi → ソース名: Hospitality Investor, カテゴリ: Hospitality Investor
 ※「## エグゼクティブサマリー」表は**作らない**（メール自体に TL;DR/要約欄が実在する場合のみ、その内容を訳して載せてよい）。
 ※front matter の summary は当日の主要見出しを60字以内で（メール実記事ベース。テーマを創作しない）。
 
+【WSJ The 10-Point 固有ルール (SOURCE_SLUG: wsj)】
+WSJ「The 10-Point」は毎号きっちり **1〜10 の10点構成**。**必ず10点すべてを出す**（1点も落とさない）。
+各点は**メールのセクションラベル（TODAY'S HEADLINES 等）を見出しに**し、内容を**そのまま忠実に翻訳**する。
+要約・詳細解説・独自分析・独自のエグゼクティブサマリー表は付けない。
+
+■ 出力構成:
+  ## 出典
+  [WSJ The 10-Point](メール内 view-in-browser のURL、無ければ https://www.wsj.com/ )
+
+  ## WSJ The 10-Point — YYYY年M月D日
+  > *配信: The Wall Street Journal / The 10-Point*
+
+  （冒頭に ✏️ 編集長イントロ段落があれば、リードとしてそのまま訳す。署名「Emma Tucker」等は省略可）
+
+  ### 1. TODAY'S HEADLINES（今日の主要ニュース）
+  - <記事1の見出し訳>：<メール本文のその記事の説明を訳>（[原文](URL)）
+  - <記事2の見出し訳>：…   ← #1は複数記事の束。**中の記事を1本ずつ箇条書きで全部**出す
+  ### 2. FROM THE MARKETS（市場から）
+  - <記事1>… / - <記事2>…   ← #2も束。**全部**出す（1本に潰さない）
+  ### 3. READ IT HERE FIRST（独占先出し）
+  <単一記事。太字ティザー行＋本文段落をそのまま訳す（[原文](URL)）>
+  ### 4. <その点の見出し訳>   ← ラベルが無い点は、その点の太字ティザー(=記事見出し)を訳して見出しにする
+  … 5, 6, 9 も同様に単一特集をそのまま訳す
+  ### 7. HAPPENING TODAY（本日の予定）
+  <予定を箇条書きで訳す>
+  ### 8. THE NUMBER（数字）
+  <大きな数字＋その解説を訳す（数字は原表記のまま）>
+  ### 10. BEYOND THE NEWSROOM（編集部の外から）
+  <Opinion or WSJ Buy Side をそのまま訳す>
+
+■ 絶対厳守:
+  - **番号1〜10を必ず全部出す**。メールに存在する点は省略しない（先頭数点で切らない）。
+  - **#1(TODAY'S HEADLINES)・#2(FROM THE MARKETS)は複数記事の束**。束の中の各記事を**箇条書きで漏れなく**出す。
+  - 各見出しは**メールのセクションラベルの訳**（ラベルが無い点はその記事の見出しの訳）。汎用テーマ名を創作しない。
+  - メール本文に無い分析・要旨・詳細解説・エグゼクティブサマリー表を足さない（忠実翻訳のみ）。
+  - 広告（"Sponsored By" / "CONTENT FROM:" / 別ニュースレター勧誘「Sign up for…」/「Take a break…」）・
+    フッター（About Us / 編集担当クレジット / Unsubscribe）は**出力しない**。
+  - 固有名詞・数字（例: 57,000 jobs / $15.6 billion / 10.9 billion gallons）は**原表記のまま正確に**転記。
+  - front matter: title「WSJ The 10-Point｜YYYY年MM月DD日」/ categories ["WSJ"] /
+    summary は当日の主要点を60字以内（実記事ベース・創作しない）/ tags は本文から3個（日本語）。
+
 【CNBC Breaking News専用フォーマット (SOURCE_SLUG: cnbc)】
 CNBCは1日20〜30通届く速報型ニュースレターです。通常の「**要旨**＋**詳細解説**」構成は使わず、
 以下の軽量フォーマットを使用すること：
