@@ -141,6 +141,51 @@ WSJ「The 10-Point」は毎号きっちり **1〜10 の10点構成**。**必ず1
   - front matter: title「WSJ The 10-Point｜YYYY年MM月DD日」/ categories ["WSJ"] /
     summary は当日の主要点を60字以内（実記事ベース・創作しない）/ tags は本文から3個（日本語）。
 
+【NYT DealBook 固有ルール (SOURCE_SLUG: dealbook)】
+DealBook（Andrew Ross Sorkin）は「巻頭エッセイ → メイン記事 → HERE'S WHAT'S HAPPENING → 特集記事複数 →
+THE SPEED READ」の構成。**メールに実在する記事を、メールの通りに忠実翻訳**する。要約・詳細解説・独自の汎用
+エグゼクティブサマリー表は作らない。号をまたいで固定なラベルは `HERE'S WHAT'S HAPPENING` と `THE SPEED READ` のみ。
+
+■ 翻訳範囲: プリヘッダー〜「Thanks for reading!」の**直前まで**。
+  **「Thanks for reading!」以降（クロージング挨拶・編集部スタッフ一覧・フッター・購読誘導・Unsubscribe）は全て除外**。
+  広告（`A MESSAGE FROM` / `ADVERTISEMENT` / `SPONSOR` / `Editors' Picks` / `Paid Post`）があれば除外。
+
+■ 出力構成:
+  ## 出典
+  [NYT DealBook](https://www.nytimes.com/section/business/dealbook)
+
+  ## NYT DealBook — YYYY年M月D日
+  > *配信: NYT DealBook / Andrew Ross Sorkin*
+
+  （冒頭に Sorkin の巻頭エッセイ "Good morning. Andrew here…" があれば、リード段落として忠実に訳す。
+    署名・休刊告知・"Sign up here" 等の誘導は省略可）
+
+  ### <メイン記事の見出し訳>   ← 今号なら "A tough call" の訳
+  本文をそのまま訳す。記事内の太字小見出し（`What to watch for:` 等）はそのまま訳して残す。数字は原表記のまま。
+  ### 最新の動き（HERE'S WHAT'S HAPPENING）
+  - <短信1の見出し訳>：<本文の訳>   ← **束。各短信を1本ずつ箇条書きで全部**（潰さない）
+  - <短信2>：…
+  ### <特集記事1の見出し訳>
+  本文をそのまま訳す（設問形式の小見出し・箇条書きも保つ）
+  ### <特集記事2の見出し訳> …   ← メールにある特集記事を**全部**
+  ### THE SPEED READ（速報まとめ）
+  **Deals（ディール）**
+  - <各行の1〜2文の要約を忠実に訳す>（末尾の出典タグ (WSJ)(NYT)(Bloomberg)(AP) は原表記のまま残す）
+  **Politics, policy and regulation（政治・政策・規制）**
+  - …
+  **Best of the rest（その他）**
+  - …
+
+■ 絶対厳守:
+  - メールに実在する記事・項目だけを出す。入力に無い分析・数値・一般論・汎用テーマ（雇用市場/市場動向/経済動向/トピック1-3）を足さない。
+  - `HERE'S WHAT'S HAPPENING` と `THE SPEED READ` は束。**中の各項目を箇条書きで漏れなく**出す（1本に潰さない）。
+  - **THE SPEED READ も忠実に訳す**（各行の要約を省略・割愛しない。出典タグを残す）。
+  - 「要旨」「詳細解説」ラベル・独自のエグゼクティブサマリー表は作らない（忠実翻訳のみ）。
+  - リンクはトラッキングURLしか無いので本文から**落としてよい**（本文の訳を優先）。
+  - 固有名詞・数字（例: 110,000 jobs / 4.3% / S&P 500）は**原表記のまま正確に**。
+  - front matter: title「NYT DealBook｜YYYY年MM月DD日」/ categories ["NYT-DealBook"] /
+    summary は当日の主要記事を60字以内（実記事ベース・創作しない）/ tags は本文から3個（日本語）。
+
 【CNBC Breaking News専用フォーマット (SOURCE_SLUG: cnbc)】
 CNBCは1日20〜30通届く速報型ニュースレターです。通常の「**要旨**＋**詳細解説**」構成は使わず、
 以下の軽量フォーマットを使用すること：
