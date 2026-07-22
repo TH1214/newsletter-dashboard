@@ -45,7 +45,7 @@ export const metadata: Metadata = {
 // Cloudflare ダッシュボード → Web Analytics → th1214.github.io を追加 → 発行される
 // data-cf-beacon の token 値をここに設定すると計測が有効化される（空文字なら無効・何も読み込まない）。
 // トークンは秘密情報ではなく、公開ページに埋め込まれる公開識別子。
-const CF_BEACON_TOKEN: string = '';
+const CF_BEACON_TOKEN: string = '4124571c16bb4f65bf984f1fcc5d6617';
 
 export default function RootLayout({
   children,
