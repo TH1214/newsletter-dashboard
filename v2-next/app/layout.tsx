@@ -41,6 +41,12 @@ export const metadata: Metadata = {
   },
 };
 
+// Cloudflare Web Analytics のビーコン用トークン。
+// Cloudflare ダッシュボード → Web Analytics → th1214.github.io を追加 → 発行される
+// data-cf-beacon の token 値をここに設定すると計測が有効化される（空文字なら無効・何も読み込まない）。
+// トークンは秘密情報ではなく、公開ページに埋め込まれる公開識別子。
+const CF_BEACON_TOKEN: string = '';
+
 export default function RootLayout({
   children,
 }: {
@@ -65,6 +71,15 @@ export default function RootLayout({
           title="Bolgheri Daily Brief — RSS Feed"
           href="/newsletter-dashboard/feed.xml"
         />
+        {/* Cloudflare Web Analytics（プライバシー配慮・Cookieなし・DNS/プロキシ変更不要）。
+            トークン未設定のうちは何も読み込まない。 */}
+        {CF_BEACON_TOKEN ? (
+          <script
+            defer
+            src="https://static.cloudflareinsights.com/beacon.min.js"
+            data-cf-beacon={`{"token": "${CF_BEACON_TOKEN}"}`}
+          />
+        ) : null}
       </head>
       <body>
         {children}
