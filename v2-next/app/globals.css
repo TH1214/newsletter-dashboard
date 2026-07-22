@@ -3806,3 +3806,251 @@ body.menu-open .overlay { transform: translateY(0); }
   .wb-search-input { font-size: 16px; }
   .wb-search-title { font-size: 18px; }
 }
+
+/* ==================================================================
+   "Night Desk" — トップページ (app/page.tsx) 専用スタイル。
+   design_handoff_top_page_night_desk/README.md の Design Tokens を
+   単一の正として実装。色 HEX・タイポ・余白・ホバー・レスポンシブは
+   README どおり。既存 (.wb-/.gh-/.bl-/.meta-bar 等) には一切触れない。
+   ================================================================== */
+.nd-root {
+  --nd-bg: #0E100F;
+  --nd-panel: #161917;
+  --nd-panel-hover: #1B1F1C;
+  --nd-ink: #EDEAE2;
+  --nd-lime: #C6F24E;
+  --nd-bd: rgba(237, 234, 226, .14);   /* 標準ボーダー */
+  --nd-bd-thin: rgba(237, 234, 226, .09);
+  --nd-bd-card: rgba(237, 234, 226, .12);
+  --nd-bd-pill: rgba(237, 234, 226, .22);
+  background: var(--nd-bg);
+  color: var(--nd-ink);
+  min-height: 100vh;
+  font-family: "Space Grotesk", "Noto Sans JP", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.nd-root a { color: inherit; text-decoration: none; }
+.nd-root ::selection { background: var(--nd-lime); color: var(--nd-bg); }
+
+/* 中央寄せコンテナ (max 1240 / 左右 32)。ブレークポイントで左右を詰める。 */
+.nd-wrap { max-width: 1240px; margin: 0 auto; }
+.nd-header-top,
+.nd-pills,
+.nd-hero,
+.nd-desk,
+.nd-wsj,
+.nd-footer { padding-left: 32px; padding-right: 32px; }
+
+/* ---- header (sticky) ---- */
+.nd-header {
+  position: sticky; top: 0; z-index: 20;
+  background: rgba(14, 16, 15, .92);
+  -webkit-backdrop-filter: saturate(140%) blur(6px);
+  backdrop-filter: saturate(140%) blur(6px);
+  border-bottom: 1px solid var(--nd-bd);
+}
+.nd-header-top {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-top: 16px; padding-bottom: 16px;
+}
+.nd-wordmark {
+  font-family: "Archivo", sans-serif; font-weight: 800;
+  font-size: 20px; letter-spacing: 0; line-height: 1;
+}
+.nd-slash { color: var(--nd-lime); }
+.nd-meta {
+  display: flex; align-items: center; gap: 22px;
+  font-family: "DM Mono", monospace; font-weight: 500;
+  font-size: 11px; letter-spacing: .02em;
+  color: rgba(237, 234, 226, .62);
+}
+.nd-metalink { color: var(--nd-ink); transition: color .18s ease; }
+.nd-clock { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+.nd-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--nd-lime); animation: nd-blink 1.8s infinite;
+}
+@keyframes nd-blink { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+
+/* pill rail */
+.nd-pills {
+  display: flex; flex-wrap: wrap; gap: 7px;
+  padding-bottom: 14px;
+  font-family: "DM Mono", monospace; font-weight: 400; font-size: 11px;
+  scrollbar-width: none;
+}
+.nd-pills::-webkit-scrollbar { display: none; }
+.nd-pill {
+  border: 1px solid var(--nd-bd-pill);
+  padding: 6px 13px; border-radius: 999px;
+  color: rgba(237, 234, 226, .82);
+  white-space: nowrap; transition: all .18s ease;
+}
+
+/* ---- hero ---- */
+.nd-hero { padding-top: 56px; padding-bottom: 40px; border-bottom: 1px solid var(--nd-bd); }
+.nd-hero-grid {
+  display: grid; grid-template-columns: 1.35fr 1fr; gap: 52px; align-items: center;
+}
+.nd-kicker {
+  margin: 0 0 20px; font-family: "JetBrains Mono", monospace;
+  font-size: 11px; letter-spacing: .14em; color: var(--nd-lime);
+}
+.nd-hero-line { display: flex; align-items: flex-start; gap: 26px; }
+.nd-hero-num {
+  font-weight: 700; font-size: clamp(84px, 18vw, 150px);
+  line-height: .8; letter-spacing: -.05em; color: var(--nd-lime);
+}
+.nd-hero-title {
+  margin: 0; padding-top: 8px; font-weight: 500;
+  font-size: clamp(30px, 6vw, 44px); line-height: 1.08; letter-spacing: -.02em;
+}
+.nd-hero-deck {
+  font-family: "Noto Sans JP", sans-serif; font-size: 16px; line-height: 1.85;
+  color: rgba(237, 234, 226, .68); margin: 26px 0; max-width: 52ch;
+}
+.nd-cta {
+  display: inline-flex; align-items: center; gap: 10px;
+  background: var(--nd-lime); color: var(--nd-bg);
+  font-weight: 600; font-size: 14px; padding: 13px 24px; border-radius: 999px;
+  transition: transform .18s ease;
+}
+.nd-hero-img {
+  background: var(--nd-panel); border: 1px solid rgba(237, 234, 226, .16);
+  aspect-ratio: 3 / 4; border-radius: 6px;
+  background-size: cover; background-position: center;
+  display: flex; align-items: flex-end; padding: 18px;
+}
+.nd-hero-img-cap {
+  font-family: "JetBrains Mono", monospace; font-size: 11px;
+  letter-spacing: .1em; color: rgba(237, 234, 226, .42);
+}
+
+/* ---- today's desk ---- */
+.nd-desk { padding-top: 44px; padding-bottom: 20px; }
+.nd-desk-head {
+  display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 24px;
+}
+.nd-h2 { margin: 0; font-weight: 500; font-size: 24px; letter-spacing: -.01em; }
+.nd-desk-meta {
+  font-family: "JetBrains Mono", monospace; font-size: 11px;
+  letter-spacing: .08em; color: rgba(237, 234, 226, .5);
+}
+.nd-desk-grid {
+  display: grid; gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 268px), 1fr));
+}
+.nd-card {
+  display: flex; flex-direction: column; gap: 12px;
+  background: var(--nd-panel); border: 1px solid var(--nd-bd-card);
+  border-radius: 6px; padding: 20px; min-height: 150px;
+  transition: border-color .18s ease, background .18s ease;
+}
+.nd-card-top { display: flex; align-items: center; justify-content: space-between; }
+.nd-card-tag {
+  font-family: "JetBrains Mono", monospace; font-size: 11px;
+  letter-spacing: .06em; color: var(--nd-lime);
+}
+.nd-card-date {
+  font-family: "JetBrains Mono", monospace; font-size: 10.5px;
+  color: rgba(237, 234, 226, .42);
+}
+.nd-card-name { font-weight: 600; font-size: 16px; letter-spacing: .01em; }
+.nd-card-beat {
+  font-family: "Noto Sans JP", sans-serif; font-size: 12.5px; line-height: 1.65;
+  color: rgba(237, 234, 226, .6); margin-top: auto;
+}
+
+/* ---- WSJ strip ---- */
+.nd-wsj { padding-top: 36px; padding-bottom: 12px; }
+.nd-wsj-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  border-bottom: 1px solid var(--nd-bd); padding-bottom: 12px; margin-bottom: 6px;
+}
+.nd-wsj-h { font-size: 20px; }
+.nd-wsj-all {
+  font-family: "JetBrains Mono", monospace; font-size: 11px;
+  color: var(--nd-lime); white-space: nowrap; transition: opacity .18s ease;
+}
+.nd-wsj-row {
+  display: grid; grid-template-columns: 72px 1fr 70px; gap: 18px; align-items: baseline;
+  padding: 15px 4px; border-bottom: 1px solid var(--nd-bd-thin);
+  transition: padding .18s ease;
+}
+.nd-wsj-date { font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--nd-lime); }
+.nd-wsj-title { font-family: "Noto Sans JP", sans-serif; font-size: 15px; line-height: 1.5; }
+.nd-wsj-mins {
+  text-align: right; font-family: "JetBrains Mono", monospace;
+  font-size: 10.5px; color: rgba(237, 234, 226, .42);
+}
+
+/* ---- footer ---- */
+.nd-footer {
+  margin-top: 44px; padding-top: 40px; padding-bottom: 56px;
+  border-top: 1px solid var(--nd-bd);
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: 24px;
+}
+.nd-foot-mark { font-weight: 700; font-size: 16px; margin-bottom: 8px; }
+.nd-foot-desc {
+  font-family: "Noto Sans JP", sans-serif; font-size: 12px; line-height: 1.8;
+  color: rgba(237, 234, 226, .5); max-width: 56ch;
+}
+.nd-foot-right {
+  font-family: "JetBrains Mono", monospace; font-size: 11px;
+  color: rgba(237, 234, 226, .45); text-align: right; line-height: 2;
+}
+
+/* ---- hover (ポインタ端末のみ) ---- */
+@media (hover: hover) and (pointer: fine) {
+  .nd-metalink:hover { color: var(--nd-lime); }
+  .nd-pill:hover { border-color: var(--nd-lime); color: var(--nd-lime); }
+  .nd-card:hover { border-color: var(--nd-lime); background: var(--nd-panel-hover); }
+  .nd-cta:hover { transform: translateY(-2px); }
+  .nd-wsj-all:hover { opacity: .7; }
+  .nd-wsj-row:hover { padding-left: 14px; }
+}
+/* ---- touch: 軽い :active フィードバック ---- */
+@media (hover: none) {
+  .nd-pill:active, .nd-card:active, .nd-cta:active, .nd-wsj-row:active { opacity: .8; }
+}
+
+/* ---- responsive ---- */
+/* Tablet 以下: 左右 24 / ピルは横スクロール1行 */
+@media (max-width: 1023px) {
+  .nd-header-top, .nd-pills, .nd-hero, .nd-desk, .nd-wsj, .nd-footer {
+    padding-left: 24px; padding-right: 24px;
+  }
+  .nd-pills {
+    flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
+  }
+  .nd-pill { flex: 0 0 auto; }
+}
+/* hero は < 900 で 1 カラム・カバー画像は下へ */
+@media (max-width: 900px) {
+  .nd-hero-grid { grid-template-columns: 1fr; gap: 34px; }
+  .nd-hero-img { aspect-ratio: 16 / 10; }
+}
+/* Mobile: 左右 16 / メタ間引き / 号数縦積み / WSJ 2カラム */
+@media (max-width: 640px) {
+  .nd-header-top, .nd-pills, .nd-hero, .nd-desk, .nd-wsj, .nd-footer {
+    padding-left: 16px; padding-right: 16px;
+  }
+  .nd-header-top { flex-wrap: wrap; gap: 10px; }
+  .nd-wordmark { font-size: 17px; }
+  .nd-meta { gap: 14px; font-size: 10px; }
+  .nd-vol, .nd-index { display: none; }
+  .nd-hero { padding-top: 36px; padding-bottom: 32px; }
+  .nd-hero-line { flex-direction: column; gap: 12px; }
+  .nd-hero-title { padding-top: 0; }
+  .nd-desk-meta { display: none; }
+  .nd-wsj-row { grid-template-columns: 56px 1fr; gap: 12px; }
+  .nd-wsj-date { font-size: 11px; }
+  .nd-wsj-mins { display: none; }
+  .nd-footer { flex-direction: column; }
+  .nd-foot-right { text-align: left; }
+}
+
+/* reduced-motion: 点滅・トランジション停止 */
+@media (prefers-reduced-motion: reduce) {
+  .nd-root *, .nd-dot { animation: none !important; transition: none !important; }
+}

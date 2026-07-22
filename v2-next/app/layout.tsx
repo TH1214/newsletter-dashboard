@@ -60,8 +60,10 @@ export default function RootLayout({
             fallback for the mono caps style; everything else is system-served. */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        {/* Night Desk トップページ用フォント一式（Archivo/DM Mono はヘッダー専用、
+            Space Grotesk/Noto Sans JP/JetBrains Mono は全体UI）。加算的で他ページ無影響。 */}
         <link
-          href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;600&family=Archivo:wght@600;700;800;900&family=DM+Mono:wght@400;500&display=swap"
           rel="stylesheet"
         />
         {/* P3 #6 (v3.2.2): RSS feed auto-discovery */}
