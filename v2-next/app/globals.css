@@ -3909,7 +3909,9 @@ body.menu-open .overlay { transform: translateY(0); }
   font-family: "Noto Sans JP", sans-serif; font-size: 16px; line-height: 1.85;
   color: rgba(237, 234, 226, .68); margin: 26px 0; max-width: 52ch;
 }
-.nd-cta {
+/* 詳細度メモ: `.nd-root a{color:inherit}` (0,1,1) が `.nd-cta` (0,1,0) に勝つため、
+   セレクタを `.nd-root a.nd-cta` (0,2,1) にして CTA の文字色を確実に効かせる。 */
+.nd-root a.nd-cta {
   display: inline-flex; align-items: center; gap: 10px;
   background: var(--nd-lime); color: #123524;
   font-weight: 700; font-size: 14px; padding: 13px 24px; border-radius: 999px;
