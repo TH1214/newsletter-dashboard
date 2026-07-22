@@ -150,8 +150,8 @@ relay対象は **ソース別の固定 hero 画像**（例 `/images/<src>/_defau
 ```jsonc
 {
   "wsj":            { "relay": true, "subject_label": "WSJ The 10-Point", "deadline_jst": "TBD(実測)", "edition": "single",  "hero": "/images/wsj/_default.png" },
-  "nyt-bn":         { "relay": true, "subject_label": "NYT Breaking News", "deadline_jst": "TBD", "edition": "latest_by_deadline", "hero": "..." },
-  "nyt-op":         { "relay": true, "subject_label": "NYT Opinion Today", "deadline_jst": "TBD", "edition": "latest_by_deadline", "hero": "..." },
+  "nyt-bn":         { "relay": true, "subject_label": "NYT Breaking News", "deadline_jst": "10:30(要実測)", "edition": "morning_latest_by_deadline", "hero": "..." },  // 朝版確定
+  "nyt-op":         { "relay": true, "subject_label": "NYT Opinion Today", "deadline_jst": "10:30(要実測)", "edition": "morning_latest_by_deadline", "hero": "..." },  // 朝版確定
   "economist":      { "relay": true, "subject_label": "The Economist",     "deadline_jst": "TBD", "edition": "single", "hero": "..." },
   "business-insider":{ "relay": true, "subject_label": "BI Today",         "deadline_jst": "TBD", "edition": "single", "hero": "..." },
   "skift":          { "relay": true, "subject_label": "Skift Daily",        "deadline_jst": "TBD", "edition": "single", "hero": "..." },
@@ -162,7 +162,7 @@ relay対象は **ソース別の固定 hero 画像**（例 `/images/<src>/_defau
 
 **版選択(edition)を「最新」ではなくルールで固定**（ChatGPT指摘＝冪等性）:
 - `single`: その日1通。
-- `latest_by_deadline`（BN/OP）: 「対象日付のメールのうち**締切時刻までに届いた最も新しいもの**」を採用し、**採用後はロック**（＝再実行しても同じ版）。朝版/最終版どちらにするかは締切値で表現し、**サイト表記にも「朝版」等を明記**。
+- `morning_latest_by_deadline`（BN/OP＝**朝版で確定**）: 「対象日付のメールのうち**朝の締切(≈10:30 JST・要実測)までに届いた最も新しいもの**」を採用し、**採用後はロック**（＝再実行しても同じ版・締切後の午後/夜版では上書きしない）。**サイト表記に「朝版(morning edition)」を明記**する。
 
 ---
 
@@ -213,9 +213,11 @@ relay対象は **ソース別の固定 hero 画像**（例 `/images/<src>/_defau
 7. **email送信 と push は分離**。push失敗はpushのみ再実行。
 
 ## 13. 未確定（Phase1着手前に実測/決定）
-- 各relayソースの**実配信時刻 → deadline_jst** の確定（launchd値と実受信のズレを実測）。
-- BN/OP を **朝版 / 最終版** どちらにするか（deadlineで表現・サイト表記に明記）。
+- 各relayソースの**実配信時刻 → deadline_jst** の確定（launchd値と実受信のズレを実測）。BN/OPは**朝の締切(≈10:30)を実測で最終確定**。
 - `relay-incoming` の取り込み後クリーン運用（毎回上書きpush方式で十分か）。
+
+## 決定済（2026-07-22）
+- **BN/OP は「朝版」で確定**。edition=`morning_latest_by_deadline`（朝締切≈10:30までの最新版を採用しロック・午後/夜版では上書きしない）。サイト表記に「朝版」を明記。
 
 ---
 
