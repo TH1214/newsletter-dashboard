@@ -3959,6 +3959,8 @@ body.menu-open .overlay { transform: translateY(0); }
 .nd-card-beat {
   font-family: "Noto Sans JP", sans-serif; font-size: 12.5px; line-height: 1.65;
   color: rgba(237, 234, 226, .6); margin-top: auto;
+  /* 実見出しは可変長のため 3 行でクランプしカード高さを揃える */
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
 }
 
 /* ---- WSJ strip ---- */

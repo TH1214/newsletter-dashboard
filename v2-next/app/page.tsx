@@ -32,11 +32,18 @@ export default function HomePage() {
   const coverBeat =
     ND_SOURCES.find((s) => s.slug === cover.section)?.beat ?? coverSec.eyebrow;
 
-  // 各ソースの最新号日付（Desk カードに注入）。
-  const latestDateBySlug = new Map<string, string>();
+  // 各ソースの最新号（日付＋実見出し）を Desk カードに注入する。
+  // headline は最新記事の summary（＝実際の見出し）。記事が無いソースのみ
+  // 静的 beat にフォールバックする。
+  const latestBySlug = new Map<string, { date: string; headline: string }>();
   for (const src of ND_SOURCES) {
     const arts = getArticlesBySection(src.slug);
-    if (arts.length) latestDateBySlug.set(src.slug, arts[0].date);
+    if (arts.length) {
+      latestBySlug.set(src.slug, {
+        date: arts[0].date,
+        headline: resolveDisplayTitle(arts[0]),
+      });
+    }
   }
 
   // WSJ 最新 5 件（strip）。
@@ -105,15 +112,16 @@ export default function HomePage() {
         </div>
         <div className="nd-desk-grid">
           {ND_SOURCES.map((s) => {
-            const date = latestDateBySlug.get(s.slug);
+            const latest = latestBySlug.get(s.slug);
             return (
               <Link key={s.slug} href={`/sections/${s.slug}/`} className="nd-card">
                 <div className="nd-card-top">
                   <span className="nd-card-tag">{s.tag}</span>
-                  {date && <span className="nd-card-date">{fmtMonthDay(date)}</span>}
+                  {latest && <span className="nd-card-date">{fmtMonthDay(latest.date)}</span>}
                 </div>
                 <div className="nd-card-name">{s.name}</div>
-                <div className="nd-card-beat">{s.beat}</div>
+                {/* サブタイトル: 最新号の実見出し。無ければソースの定型説明。 */}
+                <div className="nd-card-beat">{latest?.headline ?? s.beat}</div>
               </Link>
             );
           })}
