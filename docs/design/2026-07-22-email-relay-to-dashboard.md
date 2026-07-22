@@ -1,7 +1,11 @@
 # 設計: Claude翻訳メールをDashboardに転載する（Email-Relay）
 
+> **⚠️ このv1(Email-Relay)は [2026-07-22-git-relay-to-dashboard-v2.md](./2026-07-22-git-relay-to-dashboard-v2.md) に置換されました。**
+> ChatGPTレビューを受け、「メールHTMLを再パース」する方式を廃し、Mac側で生成済みの
+> 正規MarkdownをGit経由で受け渡す方式(v2)に格上げ。以下v1は経緯記録として残置。
+
 - 作成: 2026-07-22
-- ステータス: **設計のみ / 実装入れ替えは未実施**
+- ステータス: **SUPERSEDED by v2 / 実装は未実施**
 - 対象: メール配信されている8ソースの、Dashboard掲載を「gpt-4o-mini再翻訳」から「Claude日本語版メールの転載」に切り替える設計
 
 ---
