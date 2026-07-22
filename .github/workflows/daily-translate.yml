@@ -59,8 +59,8 @@ jobs:
           - buysiders
           - short-squeez
           - nyt-op
-          - cnbc
-          - cnbc-squawk
+          # - cnbc          # 2026-07-22 停止: CNBC Breaking News の日次Upを停止（既存記事・ナビは維持）
+          # - cnbc-squawk    # 2026-07-22 停止: CNBC Morning Squawk の日次Upを停止（既存記事・ナビは維持）
           - hospitality-net
           - pere
           - maverick
