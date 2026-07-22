@@ -9,8 +9,19 @@
      クライアント側の ALLOWED_EMAIL 判定は二重防御であり、依存はしない。
    ------------------------------------------------------------------ */
 
-/** 記録・表示を許可する唯一の Google アカウント */
+/** 記録（書き込み）を許可する唯一の Google アカウント（= 本人・記録者） */
 export const ALLOWED_EMAIL = 'hashiramoto@mellowps.com';
+
+/**
+ * 閲覧（read-only）を許可する Google アカウント一覧。
+ * - 記録者本人 + ライブ共有する友人を含む。
+ * - 書き込みは常に ALLOWED_EMAIL のみ（このリストに入れても記録権限は付与されない）。
+ * - セキュリティの本体は Firestore Security Rules 側の read 許可リストと必ず一致させること。
+ */
+export const READ_EMAILS = [
+  ALLOWED_EMAIL,
+  'jk@jkzencds.com', // 友人（read-only）
+];
 
 /** My Interest Dashboard が一度に読む最大件数 (無料枠保護) */
 export const QUERY_LIMIT = 500;

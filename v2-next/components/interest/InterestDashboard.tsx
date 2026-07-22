@@ -22,6 +22,7 @@ import {
 import {
   getFirebase,
   isAllowedUser,
+  canRead,
   signInWithGoogle,
   signOutUser,
   watchAuth,
@@ -29,6 +30,7 @@ import {
 } from '@/lib/interest/firebaseClient';
 import {
   ALLOWED_EMAIL,
+  READ_EMAILS,
   COLLECTION,
   LOOKBACK_DAYS,
   QUERY_LIMIT,
@@ -81,7 +83,7 @@ export type ArticleCatalog = Record<
   { title: string; source: string; section: string; category: string }
 >;
 
-type AuthState = 'loading' | 'signed-out' | 'denied' | 'allowed';
+type AuthState = 'loading' | 'signed-out' | 'denied' | 'allowed' | 'reader';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -190,7 +192,8 @@ export function InterestDashboard({ catalog = {} }: { catalog?: ArticleCatalog }
       setCurrentUser(u);
       setUser(u);
       if (!u) setAuth('signed-out');
-      else if (isAllowedUser(u)) setAuth('allowed');
+      else if (isAllowedUser(u)) setAuth('allowed'); // 記録者本人（read + write）
+      else if (canRead(u)) setAuth('reader');        // 共有された友人（read-only）
       else setAuth('denied');
     });
     return unsub;
@@ -198,7 +201,7 @@ export function InterestDashboard({ catalog = {} }: { catalog?: ArticleCatalog }
 
   const loadData = useCallback(async () => {
     const fb = getFirebase();
-    if (!fb || !isAllowedUser(user)) return;
+    if (!fb || !canRead(user)) return; // 閲覧は本人＋友人。書き込み系は下で isAllowedUser に限定
     setLoadingData(true);
     setError(null);
     try {
@@ -213,13 +216,17 @@ export function InterestDashboard({ catalog = {} }: { catalog?: ArticleCatalog }
         if ((r.clicked_at || '') >= cutoff) rows.push(r);
       });
       setEvents(rows);
-      // 自動再送 + interest_dashboard_view を最小限記録 (セッション1回)
-      await flushQueue();
-      await flushReadSessions();
-      setPending(getQueueCount());
-      if (typeof sessionStorage !== 'undefined' && !sessionStorage.getItem('il_idv')) {
-        sessionStorage.setItem('il_idv', '1');
-        void recordEvent('interest_dashboard_view', {});
+      // 書き込み系（再送・記録）は記録者本人のみ。友人(reader)では実行しない。
+      // ※ logger 側でも isAllowedUser でゲート済みだが、ここでも明示的に本人限定にする。
+      if (isAllowedUser(user)) {
+        // 自動再送 + interest_dashboard_view を最小限記録 (セッション1回)
+        await flushQueue();
+        await flushReadSessions();
+        setPending(getQueueCount());
+        if (typeof sessionStorage !== 'undefined' && !sessionStorage.getItem('il_idv')) {
+          sessionStorage.setItem('il_idv', '1');
+          void recordEvent('interest_dashboard_view', {});
+        }
       }
     } catch (e) {
       setError('読み込みに失敗しました。時間をおいて再度お試しください。');
@@ -228,9 +235,9 @@ export function InterestDashboard({ catalog = {} }: { catalog?: ArticleCatalog }
     }
   }, [user]);
 
-  // 許可ユーザーになったら一度だけ自動ロード
+  // 閲覧許可ユーザー（本人 or 友人）になったら一度だけ自動ロード
   useEffect(() => {
-    if (auth === 'allowed' && events === null && !loadingData) void loadData();
+    if ((auth === 'allowed' || auth === 'reader') && events === null && !loadingData) void loadData();
   }, [auth, events, loadingData, loadData]);
 
   /* ---------- render: auth gates ---------- */
@@ -251,12 +258,12 @@ export function InterestDashboard({ catalog = {} }: { catalog?: ArticleCatalog }
           <span className="il-eyebrow">Personal Reading Log</span>
         </div>
         <div className="il-signin">
-          <p>あなた専用の読書傾向ダッシュボードです。<br />閲覧には Google ログインが必要です。</p>
+          <p>読書傾向ダッシュボードです。<br />閲覧には許可された Google アカウントでのログインが必要です。</p>
           <button className="il-btn" onClick={() => signInWithGoogle().catch(() => setError('ログインに失敗しました'))}>
             Sign in with Google
           </button>
           {error && <p className="il-note" style={{ color: '#b00' }}>{error}</p>}
-          <p className="il-note">記録・表示は {ALLOWED_EMAIL} のアカウントのみ有効です。</p>
+          <p className="il-note">記録は {ALLOWED_EMAIL} のみ。閲覧は許可された {READ_EMAILS.length} アカウントで有効です。</p>
         </div>
       </div>
     );
@@ -394,26 +401,33 @@ export function InterestDashboard({ catalog = {} }: { catalog?: ArticleCatalog }
     }
   };
 
+  const isOwner = auth === 'allowed';
+
   return (
     <div className="il-wrap">
       <div className="il-head">
         <h1>My Interest</h1>
-        <span className="il-eyebrow">直近 {LOOKBACK_DAYS} 日 / 最大 {QUERY_LIMIT} 件 · 読書時間ベース</span>
+        <span className="il-eyebrow">
+          直近 {LOOKBACK_DAYS} 日 / 最大 {QUERY_LIMIT} 件 · 読書時間ベース
+          {!isOwner && ' · 読み取り専用'}
+        </span>
       </div>
       <div className="il-userline">
-        <span>● {user?.email}</span>
-        {pending > 0 && <span className="il-pending">未送信 {pending} 件（次回自動再送）</span>}
+        <span>● {user?.email}{!isOwner && '（閲覧のみ）'}</span>
+        {isOwner && pending > 0 && <span className="il-pending">未送信 {pending} 件（次回自動再送）</span>}
         <button className="il-btn-ghost" onClick={() => loadData()} disabled={loadingData}>
           {loadingData ? '更新中…' : '再読み込み'}
         </button>
-        <button
-          className="il-btn-ghost"
-          onClick={onShare}
-          disabled={loadingData || reads.length + clicks.length === 0}
-          title="その時点の集計を読み取り専用リンクにして友人に共有します（ログイン不要）"
-        >
-          友人に共有リンクを作成
-        </button>
+        {isOwner && (
+          <button
+            className="il-btn-ghost"
+            onClick={onShare}
+            disabled={loadingData || reads.length + clicks.length === 0}
+            title="その時点の集計を読み取り専用リンクにして友人に共有します（ログイン不要）"
+          >
+            友人に共有リンクを作成
+          </button>
+        )}
         <button className="il-btn-ghost" onClick={() => signOutUser()}>サインアウト</button>
       </div>
 

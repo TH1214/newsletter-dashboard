@@ -19,7 +19,7 @@ import {
   type User,
 } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
-import { ALLOWED_EMAIL, firebaseConfig } from './config';
+import { ALLOWED_EMAIL, READ_EMAILS, firebaseConfig } from './config';
 
 interface FirebaseHandles {
   app: FirebaseApp;
@@ -40,9 +40,20 @@ export function getFirebase(): FirebaseHandles | null {
   return _handles;
 }
 
-/** 許可メール (= 本人) かどうか。Rules 側でも同じ判定を強制している。 */
+/**
+ * 書き込み許可メール (= 本人・記録者) かどうか。Rules 側でも同じ判定を強制している。
+ * 記録 (write) はこの判定のみでゲートする — 閲覧許可 (canRead) を拡張しても記録権限は広がらない。
+ */
 export function isAllowedUser(user: User | null | undefined): boolean {
   return !!user && user.email === ALLOWED_EMAIL;
+}
+
+/**
+ * 閲覧許可メール (= 本人 or 共有された友人) かどうか。
+ * ダッシュボードの read-only 表示のみを許可する。Rules 側の read 許可リストと一致させること。
+ */
+export function canRead(user: User | null | undefined): boolean {
+  return !!user && !!user.email && READ_EMAILS.includes(user.email);
 }
 
 /** Google ログイン。許可メール以外でログインされても呼び出し側で弾く。 */

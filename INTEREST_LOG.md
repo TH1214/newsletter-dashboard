@@ -70,15 +70,32 @@ article_snapshot_captured_at
 
 ## Firestore Security Rules（公開済み）
 
-セキュリティの本体は Rules 側。許可メールのみ `reading_events` を read/write できる。
+セキュリティの本体は Rules 側。read（閲覧）と write（記録）を分離している。
+
+- **read**: 記録者本人 + 共有された友人（`READ_EMAILS`）のみ。
+- **create / update（記録）**: 記録者本人（`ALLOWED_EMAIL`）のみ。友人はログインしても書き込めない。
+- **delete**: 誰も不可（履歴の破壊防止）。
+
+`READ_EMAILS`（`v2-next/lib/interest/config.ts`）と、この Rules の read 許可リストは**必ず一致**させること。
 
 ```
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /reading_events/{eventId} {
-      allow read, write: if request.auth != null
+      // 閲覧: 記録者本人 + 共有された友人（read-only）
+      allow read: if request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email in [
+          "hashiramoto@mellowps.com",
+          "jk@jkzencds.com"
+        ];
+      // 記録（作成・更新）: 記録者本人のみ
+      allow create, update: if request.auth != null
+        && request.auth.token.email_verified == true
         && request.auth.token.email == "hashiramoto@mellowps.com";
+      // 削除は誰も不可
+      allow delete: if false;
     }
     match /{document=**} {
       allow read, write: if false;
@@ -87,7 +104,7 @@ service cloud.firestore {
 }
 ```
 
-クライアント側にも `ALLOWED_EMAIL` 判定を入れているが、これは二重防御であり依存しない。
+クライアント側にも `ALLOWED_EMAIL`（write 判定）/ `READ_EMAILS`（read 判定）を入れているが、これは UI 制御の二重防御であり、本体ガードは Rules 側。
 
 ---
 
