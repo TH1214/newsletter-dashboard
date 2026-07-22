@@ -3962,6 +3962,10 @@ body.menu-open .overlay { transform: translateY(0); }
   /* 実見出しは可変長のため 3 行でクランプしカード高さを揃える */
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
 }
+.nd-card-mins {
+  font-family: "JetBrains Mono", monospace; font-size: 10.5px;
+  letter-spacing: .08em; color: rgba(237, 234, 226, .42);
+}
 
 /* ---- WSJ strip ---- */
 .nd-wsj { padding-top: 36px; padding-bottom: 12px; }

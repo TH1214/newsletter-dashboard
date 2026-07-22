@@ -35,13 +35,14 @@ export default function HomePage() {
   // 各ソースの最新号（日付＋実見出し）を Desk カードに注入する。
   // headline は最新記事の summary（＝実際の見出し）。記事が無いソースのみ
   // 静的 beat にフォールバックする。
-  const latestBySlug = new Map<string, { date: string; headline: string }>();
+  const latestBySlug = new Map<string, { date: string; headline: string; readMinutes: number }>();
   for (const src of ND_SOURCES) {
     const arts = getArticlesBySection(src.slug);
     if (arts.length) {
       latestBySlug.set(src.slug, {
         date: arts[0].date,
         headline: resolveDisplayTitle(arts[0]),
+        readMinutes: arts[0].readMinutes,
       });
     }
   }
@@ -122,6 +123,9 @@ export default function HomePage() {
                 <div className="nd-card-name">{s.name}</div>
                 {/* サブタイトル: 最新号の実見出し。無ければソースの定型説明。 */}
                 <div className="nd-card-beat">{latest?.headline ?? s.beat}</div>
+                {latest && (
+                  <div className="nd-card-mins">{latest.readMinutes} MIN READ</div>
+                )}
               </Link>
             );
           })}

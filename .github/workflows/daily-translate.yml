@@ -158,13 +158,20 @@ jobs:
 
           echo "📧 Processing $SOURCE (weekly=$IS_WEEKLY, dow=$DOW)"
 
+          # ── 完全性検証の最小バイト数 (ソース別) ──
+          # 既定は 500。pere は仕様上「見出しのみ (本文は有料・創作禁止)」で
+          # 正常な出力でも front matter + 見出し程度の短い digest になるため閾値を下げる。
+          # これを 500 のままにすると「正しく短い」出力を誤って FAILED_TRANSLATE 扱いにしてしまう。
+          MIN_BYTES=500
+          case "$SOURCE" in pere) MIN_BYTES=150 ;; esac
+
           # ── 冪等性チェック (P1 #3 完全性検証付き) ──
           EXISTING_FILE="content/${SOURCE}/${TODAY}.md"
           if [ -f "$EXISTING_FILE" ] && [ "$FORCE_OVERWRITE" != "true" ]; then
-            # 完全性検証: front matter があり、かつ本文が 500 文字以上の場合のみ skip
+            # 完全性検証: front matter があり、かつ本文が MIN_BYTES 以上の場合のみ skip
             # (壊れた部分翻訳が「存在する」ことで再翻訳をブロックする旧バグを回避)
             if head -1 "$EXISTING_FILE" | grep -q "^---" \
-               && [ "$(wc -c < "$EXISTING_FILE")" -gt 500 ]; then
+               && [ "$(wc -c < "$EXISTING_FILE")" -gt "$MIN_BYTES" ]; then
               echo "⏭️ $EXISTING_FILE already exists and passes integrity check, skipping"
               echo "status=SKIPPED_EXISTS" >> $GITHUB_OUTPUT
               exit 0
@@ -216,10 +223,10 @@ jobs:
             tail -20 /tmp/tr_err.txt
           fi
 
-          # ── P1 #3 完全性検証: front matter + 本文 500 文字以上 ──
+          # ── P1 #3 完全性検証: front matter + 本文 MIN_BYTES 以上 (ソース別) ──
           if [ $TR_EXIT -eq 0 ] && [ -s "/tmp/translated_${SOURCE}.md" ] \
              && head -1 "/tmp/translated_${SOURCE}.md" | grep -q "^---" \
-             && [ "$(wc -c < /tmp/translated_${SOURCE}.md)" -gt 500 ]; then
+             && [ "$(wc -c < /tmp/translated_${SOURCE}.md)" -gt "$MIN_BYTES" ]; then
             cp "/tmp/translated_${SOURCE}.md" "content/${SOURCE}/${TODAY}.md"
             echo "✅ Translated $SOURCE → content/${SOURCE}/${TODAY}.md"
             echo "status=TRANSLATED" >> $GITHUB_OUTPUT
