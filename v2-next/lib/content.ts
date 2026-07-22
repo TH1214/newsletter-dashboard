@@ -91,7 +91,14 @@ export function getAllArticles(): Article[] {
       });
     }
   }
-  out.sort((a, b) => (a.date < b.date ? 1 : -1));
+  // 日付降順。同一日付は SECTIONS の編集優先順で決定的に並べる
+  // （旧: `a.date < b.date ? 1 : -1` は同値で 0 を返さず、同日グループが不定/逆順になり
+  //  配列末尾の Axios 系が Today 上位を占める不具合があった）。
+  const _order = new Map(SECTIONS.map((s, i) => [s.slug, i] as const));
+  out.sort((a, b) => {
+    if (a.date !== b.date) return a.date < b.date ? 1 : -1;
+    return (_order.get(a.section) ?? 999) - (_order.get(b.section) ?? 999);
+  });
   _cache = out;
   return out;
 }
