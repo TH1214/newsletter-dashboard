@@ -9,9 +9,10 @@
    ------------------------------------------------------------------ */
 import type { SectionSlug } from './sections';
 
-/* ヘッダー下のピルナビ（README navPills — 全ソースではなく編集部の厳選12件・順序固定）。
-   TODAY のみルート、それ以外は各セクション。href は basePath 無しの root-relative
-   （Next.js が /newsletter-dashboard を自動付与する）。 */
+/* ヘッダー下のピルナビ。全ソースへの導線を網羅する（TODAY + 全20ソース +
+   Archive + My Interest）。順序は Today's Desk（ND_SOURCES）と揃える。
+   href は basePath 無しの root-relative（Next.js が /newsletter-dashboard を自動付与）。
+   ※ README navPills は厳選12件だったが、運用要件で全ソース網羅に拡張。 */
 export interface NavPill {
   label: string;
   href: string;
@@ -24,11 +25,22 @@ export const ND_PILLS: NavPill[] = [
   { label: 'Economist', href: '/sections/economist/' },
   { label: 'Business Insider', href: '/sections/business-insider/' },
   { label: 'Skift', href: '/sections/skift/' },
+  { label: 'HN', href: '/sections/hospitality-net/' },
+  { label: 'HI', href: '/sections/hi/' },
   { label: 'Buysiders', href: '/sections/buysiders/' },
   { label: 'Short Squeez', href: '/sections/short-squeez/' },
   { label: 'NYT Opinion', href: '/sections/nyt-op/' },
   { label: 'CNBC', href: '/sections/cnbc/' },
+  { label: 'Squawk', href: '/sections/cnbc-squawk/' },
   { label: 'PERE', href: '/sections/pere/' },
+  { label: 'Maverick', href: '/sections/maverick/' },
+  { label: 'MUSHA', href: '/sections/musha/' },
+  { label: 'Axios Daily', href: '/sections/axios-daily/' },
+  { label: 'Axios AI/Deals', href: '/sections/axios-ai/' },
+  { label: 'Axios Frontier', href: '/sections/axios-frontier/' },
+  { label: 'My CLIP', href: '/sections/nikkei-hack/' },
+  { label: 'Archive →', href: '/archive/' },
+  { label: '★ My Interest', href: '/interest/' },
 ];
 
 /* Today's Desk のカード（README sources 表を順序どおりに写経）。
