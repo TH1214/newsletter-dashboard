@@ -3911,8 +3911,8 @@ body.menu-open .overlay { transform: translateY(0); }
 }
 .nd-cta {
   display: inline-flex; align-items: center; gap: 10px;
-  background: var(--nd-lime); color: var(--nd-bg);
-  font-weight: 600; font-size: 14px; padding: 13px 24px; border-radius: 999px;
+  background: var(--nd-lime); color: #123524;
+  font-weight: 700; font-size: 14px; padding: 13px 24px; border-radius: 999px;
   transition: transform .18s ease;
 }
 .nd-hero-img {
