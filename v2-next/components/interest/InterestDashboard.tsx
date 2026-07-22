@@ -41,6 +41,7 @@ import {
   flushQueue,
   flushReadSessions,
 } from '@/lib/interest/logger';
+import { encodeSnapshot, type InterestSnapshot } from '@/lib/interest/snapshot';
 import './interest.css';
 
 interface EventRow {
@@ -180,6 +181,7 @@ export function InterestDashboard({ catalog = {} }: { catalog?: ArticleCatalog }
   const [loadingData, setLoadingData] = useState(false);
   const [pending, setPending] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [shareMsg, setShareMsg] = useState<string>('');
 
   // auth 監視
   useEffect(() => {
@@ -325,6 +327,73 @@ export function InterestDashboard({ catalog = {} }: { catalog?: ArticleCatalog }
     .sort((a, b) => (eventTime(a) < eventTime(b) ? 1 : -1))
     .slice(0, 8);
 
+  // --- 友人共有: その時点の集計を凍結スナップショット化して read-only リンクを作る ---
+  const buildSnapshot = (): InterestSnapshot => ({
+    v: 1,
+    generatedAt: new Date().toISOString(),
+    lookbackDays: LOOKBACK_DAYS,
+    stats: { totalReadSecs, reads: reads.length, avgReadSecs, sources: bySourceSecs.length },
+    bySourceSecs,
+    byCategorySecs,
+    byTagSecs,
+    byDeviceSecs,
+    byWeekdaySecs,
+    byHourSecs,
+    byClickSource,
+    recentReads: recentReads.slice(0, 12).map((r) => {
+      const d = resolveDisplay(r, catalog);
+      return {
+        title: d.title.slice(0, 90),
+        source: d.source,
+        date: r.issue_date,
+        start: fmtReadStart(r),
+        secs: readSecs(r),
+        short: readSecs(r) < SHORT_READ_SECONDS,
+        tags: d.tags.slice(0, 5),
+      };
+    }),
+    longReads: longReads.slice(0, 10).map((r) => {
+      const d = resolveDisplay(r, catalog);
+      return { title: d.title.slice(0, 90), source: d.source, secs: readSecs(r) };
+    }),
+    shortLeave: shortLeave.slice(0, 10).map((r) => {
+      const d = resolveDisplay(r, catalog);
+      return { title: d.title.slice(0, 90), source: d.source, secs: readSecs(r) };
+    }),
+    recentClicks: recentClicks.slice(0, 12).map((r) => {
+      const d = resolveDisplay(r, catalog);
+      return {
+        title: d.title.slice(0, 90),
+        source: d.source,
+        date: r.issue_date,
+        clickedDate: r.clicked_date,
+        time: (r.clicked_at || '').slice(11, 16),
+      };
+    }),
+  });
+
+  const onShare = async () => {
+    try {
+      const enc = encodeSnapshot(buildSnapshot());
+      const base = location.href.split('/interest')[0];
+      const url = `${base}/interest/shared/#${enc}`;
+      let copied = false;
+      try {
+        await navigator.clipboard.writeText(url);
+        copied = true;
+      } catch {
+        copied = false;
+      }
+      setShareMsg(
+        copied
+          ? `共有リンクをコピーしました（読み取り専用スナップショット · 約${Math.max(1, Math.round(url.length / 1024))}KB）。友人に送ってください。`
+          : `コピーできませんでした。次のURL全体を手動でコピーしてください:\n${url}`,
+      );
+    } catch {
+      setShareMsg('共有リンクの生成に失敗しました。再読み込み後にお試しください。');
+    }
+  };
+
   return (
     <div className="il-wrap">
       <div className="il-head">
@@ -337,9 +406,18 @@ export function InterestDashboard({ catalog = {} }: { catalog?: ArticleCatalog }
         <button className="il-btn-ghost" onClick={() => loadData()} disabled={loadingData}>
           {loadingData ? '更新中…' : '再読み込み'}
         </button>
+        <button
+          className="il-btn-ghost"
+          onClick={onShare}
+          disabled={loadingData || reads.length + clicks.length === 0}
+          title="その時点の集計を読み取り専用リンクにして友人に共有します（ログイン不要）"
+        >
+          友人に共有リンクを作成
+        </button>
         <button className="il-btn-ghost" onClick={() => signOutUser()}>サインアウト</button>
       </div>
 
+      {shareMsg && <p className="il-note" style={{ whiteSpace: 'pre-wrap', color: 'var(--signal)' }}>{shareMsg}</p>}
       {error && <p className="il-note" style={{ color: '#b00' }}>{error}</p>}
 
       <div className="il-stats">
