@@ -3864,6 +3864,7 @@ body.menu-open .overlay { transform: translateY(0); }
   font-size: 11px; letter-spacing: .02em;
   color: rgba(237, 234, 226, .62);
 }
+.nd-total { white-space: nowrap; }
 .nd-metalink { color: var(--nd-ink); transition: color .18s ease; }
 .nd-clock { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
 .nd-dot {
@@ -4046,7 +4047,7 @@ body.menu-open .overlay { transform: translateY(0); }
   .nd-header-top { flex-wrap: wrap; gap: 10px; }
   .nd-wordmark { font-size: 17px; }
   .nd-meta { gap: 14px; font-size: 10px; }
-  .nd-vol, .nd-index { display: none; }
+  .nd-vol, .nd-index, .nd-total { display: none; }
   .nd-hero { padding-top: 36px; padding-bottom: 32px; }
   .nd-hero-line { flex-direction: column; gap: 12px; }
   .nd-hero-title { padding-top: 0; }

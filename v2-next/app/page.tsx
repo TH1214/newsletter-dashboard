@@ -60,6 +60,8 @@ export default function HomePage() {
           </Link>
           <div className="nd-meta">
             <span className="nd-vol">VOL.06 · ISSUE {issue.number}</span>
+            {/* 総記事数（アーカイブ全体の掲載本数） */}
+            <span className="nd-total">{all.length.toLocaleString('en-US')} ARTICLES</span>
             <NightDeskClock />
             <Link href="/search/" className="nd-metalink nd-index">Index</Link>
             <Link href="/archive/" className="nd-metalink">Archive →</Link>
