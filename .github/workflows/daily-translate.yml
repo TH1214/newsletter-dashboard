@@ -50,15 +50,11 @@ jobs:
       max-parallel: 1  # github_models のレート制限を避けるため直列実行 (gpt-4o-mini: 15 RPM / 150 req per day)
       matrix:
         source:
-          - nyt-bn
-          - wsj
+          # ── 2026-07-29 GPTルート恒久停止: 以下8ソースは Gmail の Claude 翻訳メールを
+          #    relay_to_dashboard.py が 1:1 掲載する専任に切替。gpt-4o-mini(daily-translate)は
+          #    (a)メール未着日に偽記事を生成し (b)relayのclaude-relay版を上書き(競合)していたため停止。
+          # - nyt-bn / wsj / economist / business-insider / skift / buysiders / short-squeez / nyt-op
           - dealbook
-          - economist
-          - business-insider
-          - skift
-          - buysiders
-          - short-squeez
-          - nyt-op
           # - cnbc          # 2026-07-22 停止: CNBC Breaking News の日次Upを停止（既存記事・ナビは維持）
           # - cnbc-squawk    # 2026-07-22 停止: CNBC Morning Squawk の日次Upを停止（既存記事・ナビは維持）
           - hospitality-net
