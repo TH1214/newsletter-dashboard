@@ -1,9 +1,14 @@
 name: Daily Newsletter Translation
 
 on:
-  schedule:
-    # 6:00 JST = 21:00 UTC (前日)
-    - cron: '0 21 * * *'
+  # 2026-08-06 スケジュール自動実行を恒久停止。
+  # 残る8ソース(dealbook/hospitality-net/pere/maverick/hi/axios-daily/axios-ai/axios-frontier)は
+  # 唯一のバックエンドだった GitHub Models(gpt-4o-mini) が retirement(HTTP 410) で恒久停止し、
+  # 毎日必ず失敗して無意味な失敗通知メールを送るだけの状態になっていた(8/3・8/5・8/6と3日連続)。
+  # これら8ソースは Mac側 relay_claude_translate.py(claude CLI・無料・GitHub Models非依存)が
+  # launchd経由で毎日正常に更新しており、ダッシュボードへの実害はない。
+  # workflow_dispatch(手動実行)は残す — 将来 GEMINI_API_KEY 登録等でバックエンドを復活させた際に
+  # 手動で動作確認できるようにするため。
   workflow_dispatch:
     inputs:
       sources:
