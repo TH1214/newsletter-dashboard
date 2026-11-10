@@ -96,15 +96,20 @@ jobs:
   deploy:
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deployment.outputs.page_url || steps.deployment_retry.outputs.page_url }}
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - name: Deploy to GitHub Pages
+      # GitHub Pages 側が稀に syncing_files で固まり deploy 段階が失敗する事象が散発。
+      # 再実行すればほぼ必ず成功するため、失敗時は自動で2回目を試す（計2回）。
+      - name: Deploy to GitHub Pages (attempt 1)
         id: deployment
+        continue-on-error: true
         uses: actions/deploy-pages@v4
-        with:
-          # GitHub Pages 側の一時的な遅延でデプロイ段階がタイムアウトする事象が散発
-          # （Getting Pages deployment status... Timeout reached, aborting!）。
-          # 既定10分では稀に間に合わないため待機を30分へ延長して吸収する。
-          timeout: 1800000
+      - name: Wait before retry
+        if: steps.deployment.outcome == 'failure'
+        run: sleep 60
+      - name: Deploy to GitHub Pages (retry)
+        if: steps.deployment.outcome == 'failure'
+        id: deployment_retry
+        uses: actions/deploy-pages@v4
