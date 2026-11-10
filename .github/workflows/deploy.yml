@@ -103,3 +103,8 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          # GitHub Pages 側の一時的な遅延でデプロイ段階がタイムアウトする事象が散発
+          # （Getting Pages deployment status... Timeout reached, aborting!）。
+          # 既定10分では稀に間に合わないため待機を30分へ延長して吸収する。
+          timeout: 1800000
